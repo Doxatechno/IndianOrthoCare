@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Outlet } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -20,6 +20,14 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+function AdminLayout() {
+  return (
+    <AppLayout>
+      <Outlet />
+    </AppLayout>
+  );
+}
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -35,20 +43,16 @@ const App = () => (
                   <TechnicianPortal />
                 </TechProtectedRoute>
               } />
-              <Route path="*" element={
-                <AppLayout>
-                  <Routes>
-                    <Route path="/" element={<Dashboard />} />
-                    <Route path="/customers" element={<Customers />} />
-                    <Route path="/equipment" element={<EquipmentPage />} />
-                    <Route path="/tickets" element={<Tickets />} />
-                    <Route path="/amc" element={<AMCContracts />} />
-                    <Route path="/pm-schedules" element={<PMSchedules />} />
-                    <Route path="/technicians" element={<Technicians />} />
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </AppLayout>
-              } />
+              <Route element={<AdminLayout />}>
+                <Route path="/" element={<Dashboard />} />
+                <Route path="/customers" element={<Customers />} />
+                <Route path="/equipment" element={<EquipmentPage />} />
+                <Route path="/tickets" element={<Tickets />} />
+                <Route path="/amc" element={<AMCContracts />} />
+                <Route path="/pm-schedules" element={<PMSchedules />} />
+                <Route path="/technicians" element={<Technicians />} />
+                <Route path="*" element={<NotFound />} />
+              </Route>
             </Routes>
           </BrowserRouter>
         </DataProvider>
