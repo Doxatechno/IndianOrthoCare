@@ -39,6 +39,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/technician-login" element={<TechnicianLogin />} />
+              <Route path="/raise-ticket/:equipmentId" element={<RaiseTicket />} />
               <Route path="/technician-portal" element={
                 <TechProtectedRoute>
                   <TechnicianPortal />
