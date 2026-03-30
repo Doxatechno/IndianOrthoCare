@@ -321,11 +321,15 @@ export default function TechnicianPortal() {
           </div>
           <span className={`text-[9px] font-bold uppercase tracking-wider ${activeTab === 'pm' ? 'text-purple-600' : 'text-gray-400'}`}>PM</span>
         </button>
-        <button className="flex flex-col items-center gap-1 opacity-40">
-          <div className="w-10 h-10 rounded-xl flex items-center justify-center">
-            <Activity size={18} className="text-gray-400" />
+        <button
+          onClick={() => setActiveTab('activity')}
+          className={`flex flex-col items-center gap-1 transition-all ${activeTab === 'activity' ? '' : 'opacity-40'}`}
+        >
+          <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${activeTab === 'activity' ? 'shadow-md' : ''}`}
+            style={activeTab === 'activity' ? { background: 'linear-gradient(135deg, hsl(270, 60%, 55%), hsl(250, 60%, 45%))' } : {}}>
+            <Activity size={18} className={activeTab === 'activity' ? 'text-white' : 'text-gray-400'} />
           </div>
-          <span className="text-[9px] font-bold uppercase tracking-wider text-gray-400">Activity</span>
+          <span className={`text-[9px] font-bold uppercase tracking-wider ${activeTab === 'activity' ? 'text-purple-600' : 'text-gray-400'}`}>Activity</span>
         </button>
         <button onClick={handleSignOut} className="flex flex-col items-center gap-1 opacity-40">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center">
