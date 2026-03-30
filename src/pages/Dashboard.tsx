@@ -229,7 +229,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '600ms' }}>
         {bottomStats.map(stat => (
-          <div key={stat.label} className="glass-card p-4 flex items-center gap-3 hover:-translate-y-0.5 transition-all duration-300">
+          <div key={stat.label} onClick={() => navigate(stat.link)} className="glass-card p-4 flex items-center gap-3 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
             <div className={`p-2.5 rounded-xl ${stat.bg}`}>
               <stat.icon size={16} className={stat.color} strokeWidth={2} />
             </div>
