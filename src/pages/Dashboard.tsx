@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
   Cpu, Users, ArrowUpRight, AlertCircle
@@ -20,6 +21,7 @@ const ticketStatusData = [
 const CHART_COLORS = ['hsl(250,75%,60%)', 'hsl(310,65%,58%)', 'hsl(190,80%,50%)', 'hsl(38,92%,50%)'];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { tickets, equipment, amcContracts, pmSchedules, customers } = useData();
 
   // Equipment with warranty expiring in next 90 days (potential AMC business)
@@ -67,7 +69,8 @@ export default function Dashboard() {
       subtitle: 'Completed this month',
       icon: CheckCircle2,
       gradient: 'gradient-card-1',
-      trend: '+12%'
+      trend: '+12%',
+      link: '/tickets'
     },
     {
       label: 'Pending',
@@ -75,7 +78,8 @@ export default function Dashboard() {
       subtitle: 'Awaiting action',
       icon: Clock,
       gradient: 'gradient-card-2',
-      trend: '-5%'
+      trend: '-5%',
+      link: '/tickets'
     },
     {
       label: 'Active AMCs',
@@ -83,7 +87,8 @@ export default function Dashboard() {
       subtitle: 'Running contracts',
       icon: Shield,
       gradient: 'gradient-card-3',
-      trend: '+15%'
+      trend: '+15%',
+      link: '/amc'
     },
     {
       label: 'Upcoming PMs',
@@ -91,15 +96,16 @@ export default function Dashboard() {
       subtitle: 'Next 30 days',
       icon: CalendarCheck,
       gradient: 'gradient-card-4',
-      trend: '3 due'
+      trend: '3 due',
+      link: '/pm-schedules'
     },
   ];
 
   const bottomStats = [
-    { label: 'In Progress', value: tickets.filter(t => t.status === 'In Progress').length, icon: ClipboardList, color: 'text-info', bg: 'bg-info/10' },
-    { label: 'Issues', value: tickets.filter(t => t.status === 'Issue Reported').length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
-    { label: 'Equipment', value: equipment.length, icon: Cpu, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Customers', value: customers.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10' },
+    { label: 'In Progress', value: tickets.filter(t => t.status === 'In Progress').length, icon: ClipboardList, color: 'text-info', bg: 'bg-info/10', link: '/tickets' },
+    { label: 'Issues', value: tickets.filter(t => t.status === 'Issue Reported').length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10', link: '/tickets' },
+    { label: 'Equipment', value: equipment.length, icon: Cpu, color: 'text-primary', bg: 'bg-primary/10', link: '/equipment' },
+    { label: 'Customers', value: customers.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10', link: '/customers' },
   ];
 
   const amcPieData = [
@@ -115,7 +121,8 @@ export default function Dashboard() {
         {topCards.map((card, index) => (
           <div
             key={card.label}
-            className={`${card.gradient} rounded-2xl p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-default opacity-0 animate-fade-in`}
+            onClick={() => navigate(card.link)}
+            className={`${card.gradient} rounded-2xl p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer opacity-0 animate-fade-in`}
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-sm" />
@@ -222,7 +229,7 @@ export default function Dashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '600ms' }}>
         {bottomStats.map(stat => (
-          <div key={stat.label} className="glass-card p-4 flex items-center gap-3 hover:-translate-y-0.5 transition-all duration-300">
+          <div key={stat.label} onClick={() => navigate(stat.link)} className="glass-card p-4 flex items-center gap-3 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
             <div className={`p-2.5 rounded-xl ${stat.bg}`}>
               <stat.icon size={16} className={stat.color} strokeWidth={2} />
             </div>
