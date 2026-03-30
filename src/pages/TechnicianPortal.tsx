@@ -299,6 +299,60 @@ export default function TechnicianPortal() {
         )}
       </div>
 
+        {/* Activity Tab */}
+        {activeTab === 'activity' && (
+          <div className="space-y-3">
+            {[...myTickets, ...myPMs].length === 0 ? (
+              <div className="text-center py-16">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-gray-100 flex items-center justify-center mb-3">
+                  <Activity size={24} className="text-gray-300" />
+                </div>
+                <p className="text-sm text-gray-400">No recent activity</p>
+              </div>
+            ) : (
+              <>
+                <p className="text-[10px] font-bold text-gray-300 uppercase tracking-[0.15em] px-1">All Assigned Work</p>
+                {[
+                  ...myTickets.map(t => ({ type: 'ticket' as const, id: t.id, name: t.equipmentName, customer: t.customerName, status: t.status, date: t.createdDate })),
+                  ...myPMs.map(p => ({ type: 'pm' as const, id: p.id, name: p.equipmentName, customer: p.customerName, status: p.status, date: p.plannedDate })),
+                ].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).map(item => {
+                  const gradient = statusGradients[item.status] || 'from-gray-400 to-gray-500';
+                  const StatusIcon = statusIcons[item.status] || Clock;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => item.type === 'ticket' ? setDetailTicket(item.id) : setDetailPM(item.id)}
+                      className="w-full text-left p-4 rounded-2xl bg-white border border-gray-100 hover:shadow-md transition-all active:scale-[0.98] shadow-sm"
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${gradient} flex items-center justify-center shrink-0 shadow-sm`}>
+                          <StatusIcon size={18} className="text-white" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="text-sm font-bold text-gray-800 truncate">{item.name}</p>
+                              <p className="text-xs text-gray-400 truncate">{item.customer}</p>
+                            </div>
+                            <span className="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 uppercase">
+                              {item.type === 'ticket' ? 'Ticket' : 'PM'}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-3 mt-2 text-[11px] text-gray-400">
+                            <span className="flex items-center gap-1"><Clock size={10} /> {item.date}</span>
+                            <span className={`font-semibold ${item.status === 'Completed' ? 'text-emerald-500' : item.status === 'Pending' ? 'text-amber-500' : 'text-blue-500'}`}>{item.status}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </>
+            )}
+          </div>
+        )}
+      </div>
+
       {/* Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex items-center justify-around shadow-2xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         <button
