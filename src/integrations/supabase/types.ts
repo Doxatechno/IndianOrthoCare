@@ -16,8 +16,11 @@ export type Database = {
     Tables: {
       amc_contracts: {
         Row: {
+          customer_id: string
+          customer_name: string
           end_date: string
           equipment_id: string
+          equipment_name: string
           id: string
           price: number
           start_date: string
@@ -25,8 +28,11 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          customer_id?: string
+          customer_name?: string
           end_date: string
           equipment_id: string
+          equipment_name?: string
           id: string
           price?: number
           start_date: string
@@ -34,8 +40,11 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          customer_id?: string
+          customer_name?: string
           end_date?: string
           equipment_id?: string
+          equipment_name?: string
           id?: string
           price?: number
           start_date?: string
@@ -88,6 +97,7 @@ export type Database = {
       equipment: {
         Row: {
           customer_id: string
+          customer_name: string
           id: string
           installation_date: string | null
           model_number: string
@@ -99,6 +109,7 @@ export type Database = {
         }
         Insert: {
           customer_id: string
+          customer_name?: string
           id: string
           installation_date?: string | null
           model_number?: string
@@ -110,6 +121,7 @@ export type Database = {
         }
         Update: {
           customer_id?: string
+          customer_name?: string
           id?: string
           installation_date?: string | null
           model_number?: string
@@ -133,7 +145,9 @@ export type Database = {
         Row: {
           amc_id: string
           assigned_technician: string | null
+          customer_name: string
           equipment_id: string
+          equipment_name: string
           id: string
           planned_date: string
           pm_number: number
@@ -143,7 +157,9 @@ export type Database = {
         Insert: {
           amc_id: string
           assigned_technician?: string | null
+          customer_name?: string
           equipment_id: string
+          equipment_name?: string
           id: string
           planned_date: string
           pm_number: number
@@ -153,7 +169,9 @@ export type Database = {
         Update: {
           amc_id?: string
           assigned_technician?: string | null
+          customer_name?: string
           equipment_id?: string
+          equipment_name?: string
           id?: string
           planned_date?: string
           pm_number?: number
@@ -182,7 +200,10 @@ export type Database = {
           assigned_technician: string | null
           completed_date: string | null
           created_date: string
+          customer_id: string
+          customer_name: string
           equipment_id: string
+          equipment_name: string
           id: string
           issue_type: string | null
           location: string
@@ -194,7 +215,10 @@ export type Database = {
           assigned_technician?: string | null
           completed_date?: string | null
           created_date?: string
+          customer_id?: string
+          customer_name?: string
           equipment_id: string
+          equipment_name?: string
           id: string
           issue_type?: string | null
           location?: string
@@ -206,7 +230,10 @@ export type Database = {
           assigned_technician?: string | null
           completed_date?: string | null
           created_date?: string
+          customer_id?: string
+          customer_name?: string
           equipment_id?: string
+          equipment_name?: string
           id?: string
           issue_type?: string | null
           location?: string
