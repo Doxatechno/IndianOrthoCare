@@ -4,6 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import AppLayout from "@/components/AppLayout";
+import { DataProvider } from "@/context/DataContext";
 import Dashboard from "@/pages/Dashboard";
 import Customers from "@/pages/Customers";
 import EquipmentPage from "@/pages/EquipmentPage";
@@ -19,19 +20,21 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <AppLayout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/customers" element={<Customers />} />
-            <Route path="/equipment" element={<EquipmentPage />} />
-            <Route path="/tickets" element={<Tickets />} />
-            <Route path="/amc" element={<AMCContracts />} />
-            <Route path="/pm-schedules" element={<PMSchedules />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </AppLayout>
-      </BrowserRouter>
+      <DataProvider>
+        <BrowserRouter>
+          <AppLayout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/amc" element={<AMCContracts />} />
+              <Route path="/pm-schedules" element={<PMSchedules />} />
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </AppLayout>
+        </BrowserRouter>
+      </DataProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
