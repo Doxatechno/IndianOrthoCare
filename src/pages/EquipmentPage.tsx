@@ -1,40 +1,29 @@
-import { useState } from 'react';
-import { Search, Plus, Cpu, Pencil, QrCode } from 'lucide-react';
-import EquipmentQRLabel from '@/components/EquipmentQRLabel';
+import { useState, useMemo } from 'react';
+import { Search, LayoutGrid, List, Cpu } from 'lucide-react';
 import { Equipment } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import StatusBadge from '@/components/StatusBadge';
+import EquipmentQRLabel from '@/components/EquipmentQRLabel';
+import EquipmentCard from '@/components/equipment/EquipmentCard';
+import EquipmentAddDialog from '@/components/equipment/EquipmentAddDialog';
+import EquipmentEditDialog from '@/components/equipment/EquipmentEditDialog';
 
 export default function EquipmentPage() {
   const { customers, equipment, addEquipment, updateEquipment } = useData();
   const [search, setSearch] = useState('');
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const [view, setView] = useState<'grid' | 'list'>('grid');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
   const [editForm, setEditForm] = useState<Equipment | null>(null);
   const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
 
-  const filtered = equipment.filter(e =>
-    e.name.toLowerCase().includes(search.toLowerCase()) ||
-    e.serialNumber.toLowerCase().includes(search.toLowerCase()) ||
-    e.customerName.toLowerCase().includes(search.toLowerCase())
-  );
-
-  const handleAdd = async () => {
-    if (!form.name || !form.customerId) return;
-    try {
-      await addEquipment(form);
-      setForm({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
-      setDialogOpen(false);
-    } catch (error) {
-      console.error('Failed to add equipment:', error);
-    }
-  };
+  const filtered = useMemo(() =>
+    equipment.filter(e =>
+      e.name.toLowerCase().includes(search.toLowerCase()) ||
+      e.serialNumber.toLowerCase().includes(search.toLowerCase()) ||
+      e.customerName.toLowerCase().includes(search.toLowerCase())
+    ), [equipment, search]);
 
   const handleEdit = (e: Equipment) => {
     setEditForm({ ...e });
@@ -62,163 +51,134 @@ export default function EquipmentPage() {
     return 'Active';
   };
 
+  // Stats
+  const totalCount = equipment.length;
+  const activeWarranty = equipment.filter(e => getWarrantyStatus(e) === 'Active').length;
+  const expiringSoon = equipment.filter(e => getWarrantyStatus(e) === 'Expiring Soon').length;
+  const expired = equipment.filter(e => getWarrantyStatus(e) === 'Expired').length;
+
   return (
-    <div className="space-y-5 animate-fade-in">
+    <div className="space-y-6 animate-fade-in">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <h1 className="page-header font-display">Equipment</h1>
           <p className="page-subheader">Manage medical equipment inventory</p>
         </div>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"><Plus size={16} /> Add Equipment</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader><DialogTitle className="font-display">New Equipment</DialogTitle></DialogHeader>
-            <div className="space-y-3 pt-2">
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Equipment Name</Label>
-                <Input className="mt-1.5 rounded-xl" placeholder="e.g. X-Ray Machine" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Model Number</Label>
-                <Input className="mt-1.5 rounded-xl" placeholder="e.g. XR-5000" value={form.modelNumber} onChange={e => setForm({ ...form, modelNumber: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Serial Number</Label>
-                <Input className="mt-1.5 rounded-xl" placeholder="e.g. SN-XR-2024-001" value={form.serialNumber} onChange={e => setForm({ ...form, serialNumber: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Customer</Label>
-                <Select value={form.customerId} onValueChange={v => setForm({ ...form, customerId: v })}>
-                  <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Add Equipment</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <EquipmentAddDialog customers={customers} onAdd={addEquipment} />
       </div>
 
-      <div className="relative max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search by name, serial, customer..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {[
+          { label: 'Total Equipment', value: totalCount, color: 'bg-primary/10 text-primary' },
+          { label: 'Active Warranty', value: activeWarranty, color: 'bg-success/10 text-success' },
+          { label: 'Expiring Soon', value: expiringSoon, color: 'bg-warning/10 text-warning' },
+          { label: 'Expired', value: expired, color: 'bg-destructive/10 text-destructive' },
+        ].map(stat => (
+          <div key={stat.label} className="rounded-2xl border border-border/60 bg-card p-4 space-y-1">
+            <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">{stat.label}</p>
+            <p className={`text-2xl font-bold ${stat.color.split(' ')[1]}`}>{stat.value}</p>
+          </div>
+        ))}
       </div>
 
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader><DialogTitle className="font-display">Edit Equipment</DialogTitle></DialogHeader>
-          {editForm && (
-            <div className="space-y-3 pt-2">
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Equipment Name</Label>
-                <Input className="mt-1.5 rounded-xl" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Model Number</Label>
-                <Input className="mt-1.5 rounded-xl" value={editForm.modelNumber} onChange={e => setEditForm({ ...editForm, modelNumber: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Serial Number</Label>
-                <Input className="mt-1.5 rounded-xl" value={editForm.serialNumber} onChange={e => setEditForm({ ...editForm, serialNumber: e.target.value })} />
-              </div>
-              <div>
-                <Label className="text-xs font-semibold text-muted-foreground">Customer</Label>
-                <Select value={editForm.customerId} onValueChange={v => setEditForm({ ...editForm, customerId: v })}>
-                  <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select customer" /></SelectTrigger>
-                  <SelectContent>
-                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button onClick={handleEditSave} className="w-full mt-3 rounded-xl h-11 font-semibold">Save Changes</Button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
-
-      <div className="hidden md:block glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-border/50 bg-secondary/40">
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Equipment</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Model</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Serial No.</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Customer</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Installed</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Warranty</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border/40">
-              {filtered.map(e => {
-                const ws = getWarrantyStatus(e);
-                return (
-                  <tr key={e.id} className="hover:bg-secondary/30 transition-colors">
-                    <td className="px-5 py-3.5">
-                      <p className="font-semibold text-foreground">{e.name}</p>
-                    </td>
-                    <td className="px-5 py-3.5 text-muted-foreground">{e.modelNumber}</td>
-                    <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground hidden lg:table-cell">{e.serialNumber}</td>
-                    <td className="px-5 py-3.5 text-muted-foreground">{e.customerName}</td>
-                    <td className="px-5 py-3.5 text-muted-foreground text-[12px]">{e.installationDate || '—'}</td>
-                    <td className="px-5 py-3.5">
-                      {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[11px] text-muted-foreground">N/A</span>}
-                    </td>
-                    <td className="px-5 py-3.5 flex items-center gap-1">
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
-                        <Pencil size={14} className="text-primary" />
-                      </Button>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setQrEquipment(e)}>
-                        <QrCode size={14} className="text-primary" />
-                      </Button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+      {/* Search & view toggle */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="relative w-full sm:max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by name, serial, customer..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
+        <Tabs value={view} onValueChange={v => setView(v as 'grid' | 'list')} className="hidden sm:block">
+          <TabsList className="rounded-xl h-9 p-1">
+            <TabsTrigger value="grid" className="rounded-lg h-7 px-3 text-xs gap-1.5"><LayoutGrid size={13} /> Grid</TabsTrigger>
+            <TabsTrigger value="list" className="rounded-lg h-7 px-3 text-xs gap-1.5"><List size={13} /> List</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      <div className="md:hidden space-y-3">
-        {filtered.map((e, i) => {
-          const ws = getWarrantyStatus(e);
-          return (
-            <div key={e.id} className="glass-card p-4 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                    <Cpu size={14} className="text-primary" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-bold text-foreground">{e.name}</p>
-                    <p className="text-[11px] text-muted-foreground">{e.modelNumber} · {e.serialNumber}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
-                    <Pencil size={12} className="text-primary" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => setQrEquipment(e)}>
-                    <QrCode size={12} className="text-primary" />
-                  </Button>
-                  {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[10px] text-muted-foreground">N/A</span>}
-                </div>
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/40">
-                <span>{e.customerName}</span>
-                <span>{e.installationDate || 'Not installed'}</span>
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Grid View */}
+      {view === 'grid' && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filtered.map((e, i) => (
+            <EquipmentCard key={e.id} equipment={e} index={i} onEdit={handleEdit} onQr={setQrEquipment} />
+          ))}
+        </div>
+      )}
 
+      {/* List View */}
+      {view === 'list' && (
+        <div className="hidden md:block rounded-2xl border border-border/60 bg-card overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-border/50 bg-secondary/40">
+                  <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Equipment</th>
+                  <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Model</th>
+                  <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Serial No.</th>
+                  <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Customer</th>
+                  <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Installed</th>
+                  <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Warranty</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border/40">
+                {filtered.map((e, i) => {
+                  const ws = getWarrantyStatus(e);
+                  return (
+                    <tr key={e.id} className="hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => handleEdit(e)}>
+                      <td className="px-5 py-3.5">
+                        <div className="flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-secondary/60 flex items-center justify-center">
+                            <Cpu size={14} className="text-primary" />
+                          </div>
+                          <span className="font-semibold text-foreground">{e.name}</span>
+                        </div>
+                      </td>
+                      <td className="px-5 py-3.5 text-muted-foreground">{e.modelNumber}</td>
+                      <td className="px-5 py-3.5 font-mono text-xs text-muted-foreground hidden lg:table-cell">{e.serialNumber}</td>
+                      <td className="px-5 py-3.5 text-muted-foreground">{e.customerName}</td>
+                      <td className="px-5 py-3.5 text-muted-foreground text-[12px]">{e.installationDate || '—'}</td>
+                      <td className="px-5 py-3.5">
+                        {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[11px] text-muted-foreground">N/A</span>}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile always shows grid */}
+      {view === 'list' && (
+        <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {filtered.map((e, i) => (
+            <EquipmentCard key={e.id} equipment={e} index={i} onEdit={handleEdit} onQr={setQrEquipment} />
+          ))}
+        </div>
+      )}
+
+      {/* Empty state */}
+      {filtered.length === 0 && (
+        <div className="text-center py-16 text-muted-foreground">
+          <Cpu size={48} className="mx-auto mb-4 opacity-30" />
+          <p className="text-lg font-semibold">No equipment found</p>
+          <p className="text-sm">Try adjusting your search or add new equipment</p>
+        </div>
+      )}
+
+      {/* Edit Dialog */}
+      <EquipmentEditDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        editForm={editForm}
+        setEditForm={setEditForm}
+        customers={customers}
+        onSave={handleEditSave}
+      />
+
+      {/* QR Label */}
       {qrEquipment && (
         <EquipmentQRLabel
           open={!!qrEquipment}
