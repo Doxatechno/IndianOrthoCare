@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
-  Cpu, Users, ArrowUpRight
+  Cpu, Users, ArrowUpRight, AlertCircle
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import StatusBadge from '@/components/StatusBadge';
