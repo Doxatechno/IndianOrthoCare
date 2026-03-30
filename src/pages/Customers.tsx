@@ -75,7 +75,7 @@ export default function Customers() {
         {filtered.map((c, i) => (
           <div 
             key={c.id} 
-            className="glass-card p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in"
+            className="glass-card p-5 hover:-translate-y-1 transition-all duration-300 opacity-0 animate-fade-in"
             style={{ animationDelay: `${i * 60}ms` }}
           >
             <div className="flex items-start justify-between mb-4">
