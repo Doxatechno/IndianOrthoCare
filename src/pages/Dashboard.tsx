@@ -102,10 +102,10 @@ export default function Dashboard() {
   ];
 
   const bottomStats = [
-    { label: 'In Progress', value: tickets.filter(t => t.status === 'In Progress').length, icon: ClipboardList, color: 'text-info', bg: 'bg-info/10' },
-    { label: 'Issues', value: tickets.filter(t => t.status === 'Issue Reported').length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
-    { label: 'Equipment', value: equipment.length, icon: Cpu, color: 'text-primary', bg: 'bg-primary/10' },
-    { label: 'Customers', value: customers.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10' },
+    { label: 'In Progress', value: tickets.filter(t => t.status === 'In Progress').length, icon: ClipboardList, color: 'text-info', bg: 'bg-info/10', link: '/tickets' },
+    { label: 'Issues', value: tickets.filter(t => t.status === 'Issue Reported').length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10', link: '/tickets' },
+    { label: 'Equipment', value: equipment.length, icon: Cpu, color: 'text-primary', bg: 'bg-primary/10', link: '/equipment' },
+    { label: 'Customers', value: customers.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10', link: '/customers' },
   ];
 
   const amcPieData = [
