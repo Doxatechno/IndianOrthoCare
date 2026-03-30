@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Filter, CalendarCheck } from 'lucide-react';
-import { PMStatus, technicians } from '@/data/mockData';
+import { PMStatus } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
