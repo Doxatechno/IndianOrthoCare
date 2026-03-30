@@ -106,6 +106,22 @@ export const pmSchedules: PMSchedule[] = [
   { id: 'PM-006', amcId: 'AMC-002', equipmentId: 'E002', equipmentName: 'CT Scanner', customerName: 'City General Hospital', pmNumber: 2, plannedDate: '2025-09-15', status: 'Pending', assignedTechnician: null },
 ];
 
-export const technicians = ['Amit Verma', 'Ravi Krishnan', 'Suresh Nair', 'Deepak Joshi', 'Manoj Tiwari'];
+export interface Technician {
+  id: string;
+  name: string;
+  phone: string;
+  email: string;
+  specialization: string;
+  isActive: boolean;
+  createdAt: string;
+}
+
+export const technicians: Technician[] = [
+  { id: 'TECH-001', name: 'Amit Verma', phone: '+91 98765 11111', email: 'amit@medserv.com', specialization: 'Radiology Equipment', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-002', name: 'Ravi Krishnan', phone: '+91 98765 22222', email: 'ravi@medserv.com', specialization: 'Imaging Systems', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-003', name: 'Suresh Nair', phone: '+91 98765 33333', email: 'suresh@medserv.com', specialization: 'ICU Equipment', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-004', name: 'Deepak Joshi', phone: '+91 98765 44444', email: 'deepak@medserv.com', specialization: 'Lab Instruments', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-005', name: 'Manoj Tiwari', phone: '+91 98765 55555', email: 'manoj@medserv.com', specialization: 'General Maintenance', isActive: true, createdAt: '2024-01-01' },
+];
 
 export const issueTypes = ['Power not available', 'Site not ready', 'Accessories missing', 'Other'];

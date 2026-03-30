@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search, Plus, Filter, ClipboardList } from 'lucide-react';
-import { InstallationTicket, TicketStatus, technicians } from '@/data/mockData';
+import { InstallationTicket, TicketStatus } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,7 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: TicketStatus[] = ['Pending', 'Assigned', 'In Progress', 'Completed', 'Issue Reported'];
 
 export default function Tickets() {
-  const { tickets: data, equipment, addTicket, updateTicket } = useData();
+  const { tickets: data, equipment, addTicket, updateTicket, technicians } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -200,7 +200,7 @@ export default function Tickets() {
                     <Select value={detailTicket.assignedTechnician || ''} onValueChange={v => assignTechnician(detailTicket.id, v)}>
                       <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select technician" /></SelectTrigger>
                       <SelectContent>
-                        {technicians.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>

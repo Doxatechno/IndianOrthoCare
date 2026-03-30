@@ -5,6 +5,7 @@ import {
   tickets as seedTickets,
   amcContracts as seedAMCContracts,
   pmSchedules as seedPMSchedules,
+  technicians as seedTechnicians,
   Customer,
   Equipment,
   InstallationTicket,
@@ -13,6 +14,7 @@ import {
   AMCStatus,
   PMSchedule,
   PMStatus,
+  Technician,
 } from '@/data/mockData';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -22,6 +24,8 @@ type TicketInput = Pick<InstallationTicket, 'equipmentId' | 'location' | 'remark
 type AMCInput = { equipmentId: string; startDate: string; endDate: string; price: number };
 type TicketUpdate = Partial<Pick<InstallationTicket, 'assignedTechnician' | 'status' | 'completedDate'>>;
 type PMUpdate = Partial<Pick<PMSchedule, 'assignedTechnician' | 'status'>>;
+type TechnicianInput = Pick<Technician, 'name' | 'phone' | 'email' | 'specialization'>;
+type TechnicianUpdate = Partial<Pick<Technician, 'name' | 'phone' | 'email' | 'specialization' | 'isActive'>>;
 
 interface DataContextType {
   loading: boolean;
@@ -30,6 +34,7 @@ interface DataContextType {
   tickets: InstallationTicket[];
   amcContracts: AMCContract[];
   pmSchedules: PMSchedule[];
+  technicians: Technician[];
   addCustomer: (input: CustomerInput) => Promise<void>;
   updateCustomer: (id: string, input: CustomerInput) => Promise<void>;
   addEquipment: (input: EquipmentInput) => Promise<void>;
@@ -39,6 +44,8 @@ interface DataContextType {
   addAMCContract: (input: AMCInput) => Promise<void>;
   updateAMCStatus: (amcId: string, status: AMCStatus) => Promise<void>;
   updatePMSchedule: (pmId: string, patch: PMUpdate) => Promise<void>;
+  addTechnician: (input: TechnicianInput) => Promise<void>;
+  updateTechnician: (id: string, patch: TechnicianUpdate) => Promise<void>;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -115,6 +122,16 @@ const toPM = (row: any): PMSchedule => ({
   assignedTechnician: row.assigned_technician,
 });
 
+const toTechnician = (row: any): Technician => ({
+  id: row.id,
+  name: row.name,
+  phone: row.phone,
+  email: row.email,
+  specialization: row.specialization,
+  isActive: row.is_active,
+  createdAt: row.created_at,
+});
+
 export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -122,6 +139,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const [tickets, setTickets] = useState<InstallationTicket[]>([]);
   const [amcContracts, setAmcContracts] = useState<AMCContract[]>([]);
   const [pmSchedules, setPMSchedules] = useState<PMSchedule[]>([]);
+  const [technicians, setTechnicians] = useState<Technician[]>([]);
 
   const seedIfEmpty = useCallback(async () => {
     const { count, error } = await sb.from('customers').select('*', { count: 'exact', head: true });
@@ -198,12 +216,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const loadAllData = useCallback(async () => {
-    const [customersRes, equipmentRes, ticketsRes, amcRes, pmRes] = await Promise.all([
+    const [customersRes, equipmentRes, ticketsRes, amcRes, pmRes, techRes] = await Promise.all([
       sb.from('customers').select('*').order('id', { ascending: false }),
       sb.from('equipment').select('*').order('id', { ascending: false }),
       sb.from('tickets').select('*').order('id', { ascending: false }),
       sb.from('amc_contracts').select('*').order('id', { ascending: false }),
       sb.from('pm_schedules').select('*').order('id', { ascending: false }),
+      sb.from('technicians').select('*').order('name', { ascending: true }),
     ]);
 
     if (customersRes.error) throw customersRes.error;
@@ -211,12 +230,14 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (ticketsRes.error) throw ticketsRes.error;
     if (amcRes.error) throw amcRes.error;
     if (pmRes.error) throw pmRes.error;
+    if (techRes.error) throw techRes.error;
 
     setCustomers((customersRes.data ?? []).map(toCustomer));
     setEquipment((equipmentRes.data ?? []).map(toEquipment));
     setTickets((ticketsRes.data ?? []).map(toTicket));
     setAmcContracts((amcRes.data ?? []).map(toAMC));
     setPMSchedules((pmRes.data ?? []).map(toPM));
+    setTechnicians((techRes.data ?? []).map(toTechnician));
   }, []);
 
   useEffect(() => {
@@ -234,6 +255,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         setTickets(seedTickets);
         setAmcContracts(seedAMCContracts);
         setPMSchedules(seedPMSchedules);
+        setTechnicians(seedTechnicians);
       } finally {
         if (mounted) setLoading(false);
       }
@@ -491,6 +513,46 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setPMSchedules(prev => prev.map(p => (p.id === pmId ? { ...p, ...patch } : p)));
   }, []);
 
+  const addTechnician = useCallback(async (input: TechnicianInput) => {
+    const newTech: Technician = {
+      id: nextId(technicians.map(t => t.id), 'TECH-'),
+      name: input.name,
+      phone: input.phone,
+      email: input.email,
+      specialization: input.specialization,
+      isActive: true,
+      createdAt: today(),
+    };
+
+    const { error } = await sb.from('technicians').insert({
+      id: newTech.id,
+      name: newTech.name,
+      phone: newTech.phone,
+      email: newTech.email,
+      specialization: newTech.specialization,
+      is_active: newTech.isActive,
+      created_at: newTech.createdAt,
+    });
+    if (error) throw error;
+
+    setTechnicians(prev => [...prev, newTech].sort((a, b) => a.name.localeCompare(b.name)));
+  }, [technicians]);
+
+  const updateTechnician = useCallback(async (id: string, patch: TechnicianUpdate) => {
+    const dbPatch: Record<string, unknown> = {};
+    if (patch.name !== undefined) dbPatch.name = patch.name;
+    if (patch.phone !== undefined) dbPatch.phone = patch.phone;
+    if (patch.email !== undefined) dbPatch.email = patch.email;
+    if (patch.specialization !== undefined) dbPatch.specialization = patch.specialization;
+    if (patch.isActive !== undefined) dbPatch.is_active = patch.isActive;
+    if (Object.keys(dbPatch).length === 0) return;
+
+    const { error } = await sb.from('technicians').update(dbPatch).eq('id', id);
+    if (error) throw error;
+
+    setTechnicians(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)));
+  }, []);
+
   const value = useMemo(
     () => ({
       loading,
@@ -499,6 +561,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       tickets,
       amcContracts,
       pmSchedules,
+      technicians,
       addCustomer,
       updateCustomer,
       addEquipment,
@@ -508,6 +571,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addAMCContract,
       updateAMCStatus,
       updatePMSchedule,
+      addTechnician,
+      updateTechnician,
     }),
     [
       loading,
@@ -516,6 +581,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       tickets,
       amcContracts,
       pmSchedules,
+      technicians,
       addCustomer,
       updateCustomer,
       addEquipment,
@@ -525,6 +591,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
       addAMCContract,
       updateAMCStatus,
       updatePMSchedule,
+      addTechnician,
+      updateTechnician,
     ],
   );
 

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Filter, CalendarCheck } from 'lucide-react';
-import { PMStatus, technicians } from '@/data/mockData';
+import { PMStatus } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -9,7 +9,7 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: PMStatus[] = ['Pending', 'Assigned', 'Completed'];
 
 export default function PMSchedules() {
-  const { pmSchedules: data, updatePMSchedule } = useData();
+  const { pmSchedules: data, updatePMSchedule, technicians } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -86,7 +86,7 @@ export default function PMSchedules() {
                     <Select value={p.assignedTechnician || ''} onValueChange={v => assignTechnician(p.id, v)}>
                       <SelectTrigger className="h-8 text-xs w-32 rounded-lg"><SelectValue placeholder="Assign" /></SelectTrigger>
                       <SelectContent>
-                        {technicians.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </td>
@@ -128,7 +128,7 @@ export default function PMSchedules() {
               <Select value={p.assignedTechnician || ''} onValueChange={v => assignTechnician(p.id, v)}>
                 <SelectTrigger className="h-9 text-xs rounded-xl"><SelectValue placeholder="Assign tech" /></SelectTrigger>
                 <SelectContent>
-                  {technicians.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={p.status} onValueChange={v => updateStatus(p.id, v as PMStatus)}>
