@@ -1,31 +1,52 @@
 import { useState } from 'react';
-import { Plus, Search, Phone, Mail, MapPin, Building2 } from 'lucide-react';
-import { customers as initialCustomers, Customer } from '@/data/mockData';
+import { Plus, Search, Phone, Mail, MapPin, Building2, Pencil } from 'lucide-react';
+import { Customer } from '@/data/mockData';
+import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 
+const emptyForm = { name: '', contactPerson: '', phone: '', email: '', address: '' };
+
 export default function Customers() {
-  const [data, setData] = useState<Customer[]>(initialCustomers);
+  const { customers, setCustomers } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', contactPerson: '', phone: '', email: '', address: '' });
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [form, setForm] = useState(emptyForm);
 
-  const filtered = data.filter(c =>
+  const filtered = customers.filter(c =>
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.contactPerson.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
+  const openAdd = () => {
+    setEditingId(null);
+    setForm(emptyForm);
+    setDialogOpen(true);
+  };
+
+  const openEdit = (c: Customer) => {
+    setEditingId(c.id);
+    setForm({ name: c.name, contactPerson: c.contactPerson, phone: c.phone, email: c.email, address: c.address });
+    setDialogOpen(true);
+  };
+
+  const handleSave = () => {
     if (!form.name) return;
-    const newCustomer: Customer = {
-      id: `C${String(data.length + 1).padStart(3, '0')}`,
-      ...form,
-      createdAt: new Date().toISOString().split('T')[0],
-    };
-    setData([newCustomer, ...data]);
-    setForm({ name: '', contactPerson: '', phone: '', email: '', address: '' });
+    if (editingId) {
+      setCustomers(prev => prev.map(c => c.id === editingId ? { ...c, ...form } : c));
+    } else {
+      const newCustomer: Customer = {
+        id: `C${String(customers.length + 1).padStart(3, '0')}`,
+        ...form,
+        createdAt: new Date().toISOString().split('T')[0],
+      };
+      setCustomers(prev => [newCustomer, ...prev]);
+    }
+    setForm(emptyForm);
+    setEditingId(null);
     setDialogOpen(false);
   };
 
@@ -38,10 +59,10 @@ export default function Customers() {
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"><Plus size={16} /> Add Customer</Button>
+            <Button onClick={openAdd} className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"><Plus size={16} /> Add Customer</Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader><DialogTitle className="font-display">New Customer</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">{editingId ? 'Edit Customer' : 'New Customer'}</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               {[
                 { key: 'name', label: 'Customer Name', placeholder: 'e.g. City General Hospital' },
@@ -60,7 +81,9 @@ export default function Customers() {
                   />
                 </div>
               ))}
-              <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Create Customer</Button>
+              <Button onClick={handleSave} className="w-full mt-3 rounded-xl h-11 font-semibold">
+                {editingId ? 'Save Changes' : 'Create Customer'}
+              </Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -88,7 +111,16 @@ export default function Customers() {
                   <p className="text-[11px] text-muted-foreground mt-0.5">{c.contactPerson}</p>
                 </div>
               </div>
-              <span className="text-[10px] font-mono font-semibold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{c.id}</span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => openEdit(c)}
+                  className="w-7 h-7 rounded-lg bg-secondary/60 hover:bg-primary/10 flex items-center justify-center transition-colors"
+                  title="Edit customer"
+                >
+                  <Pencil size={13} className="text-muted-foreground hover:text-primary" />
+                </button>
+                <span className="text-[10px] font-mono font-semibold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{c.id}</span>
+              </div>
             </div>
             <div className="space-y-2 text-[12px] text-muted-foreground">
               <div className="flex items-center gap-2.5"><Phone size={13} className="text-primary/60 shrink-0" /> <span className="truncate">{c.phone}</span></div>
