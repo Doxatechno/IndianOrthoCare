@@ -14,7 +14,216 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      amc_contracts: {
+        Row: {
+          end_date: string
+          equipment_id: string
+          id: string
+          price: number
+          start_date: string
+          status: Database["public"]["Enums"]["amc_status"]
+          updated_at: string
+        }
+        Insert: {
+          end_date: string
+          equipment_id: string
+          id: string
+          price?: number
+          start_date: string
+          status?: Database["public"]["Enums"]["amc_status"]
+          updated_at?: string
+        }
+        Update: {
+          end_date?: string
+          equipment_id?: string
+          id?: string
+          price?: number
+          start_date?: string
+          status?: Database["public"]["Enums"]["amc_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "amc_contracts_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          address: string
+          contact_person: string
+          created_at: string
+          email: string
+          id: string
+          name: string
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string
+          contact_person?: string
+          created_at?: string
+          email?: string
+          id: string
+          name: string
+          phone?: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          contact_person?: string
+          created_at?: string
+          email?: string
+          id?: string
+          name?: string
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      equipment: {
+        Row: {
+          customer_id: string
+          id: string
+          installation_date: string | null
+          model_number: string
+          name: string
+          serial_number: string
+          updated_at: string
+          warranty_end_date: string | null
+          warranty_start_date: string | null
+        }
+        Insert: {
+          customer_id: string
+          id: string
+          installation_date?: string | null
+          model_number?: string
+          name: string
+          serial_number?: string
+          updated_at?: string
+          warranty_end_date?: string | null
+          warranty_start_date?: string | null
+        }
+        Update: {
+          customer_id?: string
+          id?: string
+          installation_date?: string | null
+          model_number?: string
+          name?: string
+          serial_number?: string
+          updated_at?: string
+          warranty_end_date?: string | null
+          warranty_start_date?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pm_schedules: {
+        Row: {
+          amc_id: string
+          assigned_technician: string | null
+          equipment_id: string
+          id: string
+          planned_date: string
+          pm_number: number
+          status: Database["public"]["Enums"]["pm_status"]
+          updated_at: string
+        }
+        Insert: {
+          amc_id: string
+          assigned_technician?: string | null
+          equipment_id: string
+          id: string
+          planned_date: string
+          pm_number: number
+          status?: Database["public"]["Enums"]["pm_status"]
+          updated_at?: string
+        }
+        Update: {
+          amc_id?: string
+          assigned_technician?: string | null
+          equipment_id?: string
+          id?: string
+          planned_date?: string
+          pm_number?: number
+          status?: Database["public"]["Enums"]["pm_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pm_schedules_amc_id_fkey"
+            columns: ["amc_id"]
+            isOneToOne: false
+            referencedRelation: "amc_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pm_schedules_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tickets: {
+        Row: {
+          assigned_technician: string | null
+          completed_date: string | null
+          created_date: string
+          equipment_id: string
+          id: string
+          issue_type: string | null
+          location: string
+          remarks: string
+          status: Database["public"]["Enums"]["ticket_status"]
+          updated_at: string
+        }
+        Insert: {
+          assigned_technician?: string | null
+          completed_date?: string | null
+          created_date?: string
+          equipment_id: string
+          id: string
+          issue_type?: string | null
+          location?: string
+          remarks?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          updated_at?: string
+        }
+        Update: {
+          assigned_technician?: string | null
+          completed_date?: string | null
+          created_date?: string
+          equipment_id?: string
+          id?: string
+          issue_type?: string | null
+          location?: string
+          remarks?: string
+          status?: Database["public"]["Enums"]["ticket_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tickets_equipment_id_fkey"
+            columns: ["equipment_id"]
+            isOneToOne: false
+            referencedRelation: "equipment"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -23,7 +232,19 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      [_ in never]: never
+      amc_status:
+        | "Quotation Sent"
+        | "Approved"
+        | "Payment Pending"
+        | "Paid"
+        | "Active"
+      pm_status: "Pending" | "Assigned" | "Completed"
+      ticket_status:
+        | "Pending"
+        | "Assigned"
+        | "In Progress"
+        | "Completed"
+        | "Issue Reported"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +371,22 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      amc_status: [
+        "Quotation Sent",
+        "Approved",
+        "Payment Pending",
+        "Paid",
+        "Active",
+      ],
+      pm_status: ["Pending", "Assigned", "Completed"],
+      ticket_status: [
+        "Pending",
+        "Assigned",
+        "In Progress",
+        "Completed",
+        "Issue Reported",
+      ],
+    },
   },
 } as const
