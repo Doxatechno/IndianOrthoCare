@@ -291,6 +291,90 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Warranty Expiry & AMC Opportunities */}
+      {(warrantyExpiringSoon.length > 0 || warrantyExpired.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Expiring Soon */}
+          {warrantyExpiringSoon.length > 0 && (
+            <div className="glass-card overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: '900ms' }}>
+              <div className="flex items-center justify-between p-5 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-display flex items-center gap-2">
+                    <AlertTriangle size={14} className="text-amber-500" />
+                    Warranty Expiring Soon
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Potential AMC business opportunities</p>
+                </div>
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">{warrantyExpiringSoon.length} items</span>
+              </div>
+              <div className="divide-y divide-border/40">
+                {warrantyExpiringSoon.slice(0, 5).map(e => (
+                  <div key={e.id} className="px-5 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                        <AlertTriangle size={13} className="text-amber-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-foreground truncate">{e.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{e.customerName} · {e.serialNumber}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-xs font-bold ${e.daysLeft <= 15 ? 'text-destructive' : e.daysLeft <= 30 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                        {e.daysLeft}d left
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">{e.warrantyEndDate}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3">
+                <a href="/amc" className="block text-center text-[11px] text-primary font-semibold py-2 rounded-xl hover:bg-primary/5 transition-colors">
+                  Create AMC Contracts →
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Already Expired - No AMC */}
+          {warrantyExpired.length > 0 && (
+            <div className="glass-card overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: '1000ms' }}>
+              <div className="flex items-center justify-between p-5 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-display flex items-center gap-2">
+                    <AlertCircle size={14} className="text-destructive" />
+                    Warranty Expired — No AMC
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Equipment without coverage — follow up for AMC</p>
+                </div>
+                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2.5 py-1 rounded-full">{warrantyExpired.length} items</span>
+              </div>
+              <div className="divide-y divide-border/40">
+                {warrantyExpired.map(e => (
+                  <div key={e.id} className="px-5 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                        <Cpu size={13} className="text-destructive" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-foreground truncate">{e.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{e.customerName}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">Expired</span>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3">
+                <a href="/amc" className="block text-center text-[11px] text-primary font-semibold py-2 rounded-xl hover:bg-primary/5 transition-colors">
+                  Create AMC Contracts →
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
