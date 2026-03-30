@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
   Cpu, Users, ArrowUpRight, AlertCircle
