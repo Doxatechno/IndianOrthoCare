@@ -36,7 +36,7 @@ export default function TechnicianLogin() {
         <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5 shadow-2xl" style={{ background: 'linear-gradient(135deg, hsl(280, 70%, 65%), hsl(260, 60%, 50%))' }}>
           <Stethoscope size={36} className="text-white" />
         </div>
-        <h1 className="text-2xl font-bold text-white tracking-tight font-display">MedServ Pro</h1>
+        <h1 className="text-2xl font-bold text-white tracking-tight font-display">Doxa CareX</h1>
         <p className="text-white/60 text-sm mt-1">Technician Portal</p>
       </div>
 

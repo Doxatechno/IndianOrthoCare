@@ -49,7 +49,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Heart className="w-4 h-4 text-white" fill="currentColor" />
             </div>
             <div>
-              <h1 className="text-sm font-bold text-white tracking-tight font-display">MedServ Pro</h1>
+              <h1 className="text-sm font-bold text-white tracking-tight font-display">Doxa CareX</h1>
               <p className="text-[9px] text-white/40 uppercase tracking-[0.2em] font-medium">Service Manager</p>
             </div>
           </div>
