@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Cpu } from 'lucide-react';
+import { Search, Plus, Cpu, Pencil } from 'lucide-react';
 import { Equipment } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
@@ -13,7 +13,9 @@ export default function EquipmentPage() {
   const { customers, equipment, setEquipment } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
+  const [editForm, setEditForm] = useState<Equipment | null>(null);
 
   const filtered = equipment.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -38,6 +40,19 @@ export default function EquipmentPage() {
     setEquipment(prev => [newEquipment, ...prev]);
     setForm({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
     setDialogOpen(false);
+  };
+
+  const handleEdit = (e: Equipment) => {
+    setEditForm({ ...e });
+    setEditDialogOpen(true);
+  };
+
+  const handleEditSave = () => {
+    if (!editForm || !editForm.name || !editForm.customerId) return;
+    const customer = customers.find(c => c.id === editForm.customerId);
+    setEquipment(prev => prev.map(eq => eq.id === editForm.id ? { ...editForm, customerName: customer?.name || editForm.customerName } : eq));
+    setEditDialogOpen(false);
+    setEditForm(null);
   };
 
   const getWarrantyStatus = (e: Equipment) => {
@@ -96,6 +111,39 @@ export default function EquipmentPage() {
         <Input placeholder="Search by name, serial, customer..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
+      {/* Edit Dialog */}
+      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle className="font-display">Edit Equipment</DialogTitle></DialogHeader>
+          {editForm && (
+            <div className="space-y-3 pt-2">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Equipment Name</Label>
+                <Input className="mt-1.5 rounded-xl" value={editForm.name} onChange={e => setEditForm({ ...editForm, name: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Model Number</Label>
+                <Input className="mt-1.5 rounded-xl" value={editForm.modelNumber} onChange={e => setEditForm({ ...editForm, modelNumber: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Serial Number</Label>
+                <Input className="mt-1.5 rounded-xl" value={editForm.serialNumber} onChange={e => setEditForm({ ...editForm, serialNumber: e.target.value })} />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Customer</Label>
+                <Select value={editForm.customerId} onValueChange={v => setEditForm({ ...editForm, customerId: v })}>
+                  <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select customer" /></SelectTrigger>
+                  <SelectContent>
+                    {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button onClick={handleEditSave} className="w-full mt-3 rounded-xl h-11 font-semibold">Save Changes</Button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* Desktop Table */}
       <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
@@ -108,6 +156,7 @@ export default function EquipmentPage() {
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Customer</th>
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Installed</th>
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Warranty</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -124,6 +173,11 @@ export default function EquipmentPage() {
                     <td className="px-5 py-3.5 text-muted-foreground text-[12px]">{e.installationDate || '—'}</td>
                     <td className="px-5 py-3.5">
                       {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[11px] text-muted-foreground">N/A</span>}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
+                        <Pencil size={14} className="text-primary" />
+                      </Button>
                     </td>
                   </tr>
                 );
@@ -149,7 +203,12 @@ export default function EquipmentPage() {
                     <p className="text-[11px] text-muted-foreground">{e.modelNumber} · {e.serialNumber}</p>
                   </div>
                 </div>
-                {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[10px] text-muted-foreground">N/A</span>}
+                <div className="flex items-center gap-1">
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
+                    <Pencil size={12} className="text-primary" />
+                  </Button>
+                  {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[10px] text-muted-foreground">N/A</span>}
+                </div>
               </div>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/40">
                 <span>{e.customerName}</span>
