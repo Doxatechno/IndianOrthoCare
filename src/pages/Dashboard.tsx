@@ -21,6 +21,7 @@ const ticketStatusData = [
 const CHART_COLORS = ['hsl(250,75%,60%)', 'hsl(310,65%,58%)', 'hsl(190,80%,50%)', 'hsl(38,92%,50%)'];
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const { tickets, equipment, amcContracts, pmSchedules, customers } = useData();
 
   // Equipment with warranty expiring in next 90 days (potential AMC business)
