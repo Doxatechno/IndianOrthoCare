@@ -499,7 +499,58 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
 
     setAmcContracts(prev => prev.map(a => (a.id === amcId ? { ...a, status } : a)));
-  }, []);
+
+    // Auto-generate 4 quarterly PM schedules when AMC becomes Active
+    if (status === 'Active') {
+      const amc = amcContracts.find(a => a.id === amcId);
+      if (!amc) return;
+
+      // Check if PMs already exist for this AMC
+      const existingPMs = pmSchedules.filter(p => p.amcId === amcId);
+      if (existingPMs.length > 0) return;
+
+      const startDate = new Date(amc.startDate);
+      const newPMs: PMSchedule[] = [];
+
+      for (let i = 0; i < 4; i++) {
+        const plannedDate = new Date(startDate);
+        plannedDate.setMonth(plannedDate.getMonth() + (i * 3));
+        const pmId = `PM-${amcId.replace('AMC-', '')}-Q${i + 1}`;
+
+        const pm: PMSchedule = {
+          id: pmId,
+          amcId: amcId,
+          equipmentId: amc.equipmentId,
+          equipmentName: amc.equipmentName,
+          customerName: amc.customerName,
+          pmNumber: i + 1,
+          plannedDate: plannedDate.toISOString().split('T')[0],
+          status: 'Pending',
+          assignedTechnician: null,
+        };
+        newPMs.push(pm);
+      }
+
+      const pmRows = newPMs.map(p => ({
+        id: p.id,
+        amc_id: p.amcId,
+        equipment_id: p.equipmentId,
+        equipment_name: p.equipmentName,
+        customer_name: p.customerName,
+        pm_number: p.pmNumber,
+        planned_date: p.plannedDate,
+        status: p.status,
+        assigned_technician: p.assignedTechnician,
+      }));
+
+      const { error: pmError } = await sb.from('pm_schedules').insert(pmRows);
+      if (pmError) {
+        console.error('Failed to auto-generate PM schedules:', pmError);
+      } else {
+        setPMSchedules(prev => [...newPMs, ...prev]);
+      }
+    }
+  }, [amcContracts, pmSchedules]);
 
   const updatePMSchedule = useCallback(async (pmId: string, patch: PMUpdate) => {
     const dbPatch: Record<string, unknown> = {};
