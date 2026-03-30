@@ -1,18 +1,23 @@
 import { useState } from 'react';
-import { Search, Plus, Wrench, Phone, Mail, UserCheck, UserX } from 'lucide-react';
+import { Search, Plus, Wrench, Phone, Mail, UserCheck, UserX, KeyRound } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 export default function Technicians() {
   const { technicians, addTechnician, updateTechnician } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [credDialogOpen, setCredDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', phone: '', email: '', specialization: '' });
   const [editForm, setEditForm] = useState({ id: '', name: '', phone: '', email: '', specialization: '', isActive: true });
+  const [credForm, setCredForm] = useState({ techId: '', techName: '', email: '', password: '' });
+  const [credLoading, setCredLoading] = useState(false);
 
   const filtered = technicians.filter(t =>
     t.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -49,6 +54,40 @@ export default function Technicians() {
   const openEdit = (t: typeof editForm) => {
     setEditForm(t);
     setEditDialogOpen(true);
+  };
+
+  const openCredentials = (t: { id: string; name: string; email: string }) => {
+    setCredForm({ techId: t.id, techName: t.name, email: t.email, password: '' });
+    setCredDialogOpen(true);
+  };
+
+  const handleCreateLogin = async () => {
+    if (!credForm.email || !credForm.password) {
+      toast.error('Email and password are required');
+      return;
+    }
+    if (credForm.password.length < 6) {
+      toast.error('Password must be at least 6 characters');
+      return;
+    }
+    setCredLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('create-technician-user', {
+        body: {
+          email: credForm.email,
+          password: credForm.password,
+          technicianId: credForm.techId,
+        },
+      });
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      toast.success(`Login created for ${credForm.techName}`);
+      setCredDialogOpen(false);
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to create login');
+    } finally {
+      setCredLoading(false);
+    }
   };
 
   return (
@@ -134,7 +173,12 @@ export default function Technicians() {
                     </span>
                   </td>
                   <td className="px-5 py-3.5">
-                    <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold hover:underline">Edit</button>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold hover:underline">Edit</button>
+                      <button onClick={() => openCredentials(t)} className="text-xs text-accent font-semibold hover:underline flex items-center gap-1">
+                        <KeyRound size={10} /> Login
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -148,9 +192,8 @@ export default function Technicians() {
         {filtered.map((t, i) => (
           <div
             key={t.id}
-            className="glass-card p-4 animate-fade-in cursor-pointer active:scale-[0.98] transition-all"
+            className="glass-card p-4 animate-fade-in"
             style={{ animationDelay: `${i * 50}ms` }}
-            onClick={() => openEdit(t)}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2.5">
@@ -169,6 +212,12 @@ export default function Technicians() {
             <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/40">
               <span className="flex items-center gap-1"><Phone size={10} /> {t.phone}</span>
               <span className="flex items-center gap-1"><Mail size={10} /> {t.email}</span>
+            </div>
+            <div className="flex items-center gap-3 mt-3 pt-2 border-t border-border/40">
+              <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold">Edit</button>
+              <button onClick={() => openCredentials(t)} className="text-xs text-accent font-semibold flex items-center gap-1">
+                <KeyRound size={10} /> Create Login
+              </button>
             </div>
           </div>
         ))}
@@ -205,6 +254,42 @@ export default function Technicians() {
               </button>
             </div>
             <Button onClick={handleEdit} className="w-full mt-3 rounded-xl h-11 font-semibold">Save Changes</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Login Dialog */}
+      <Dialog open={credDialogOpen} onOpenChange={setCredDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle className="font-display">Create Login for {credForm.techName}</DialogTitle></DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground">Email</Label>
+              <Input
+                type="email"
+                className="mt-1.5 rounded-xl"
+                value={credForm.email}
+                onChange={e => setCredForm({ ...credForm, email: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground">Password</Label>
+              <Input
+                type="password"
+                className="mt-1.5 rounded-xl"
+                placeholder="Min 6 characters"
+                value={credForm.password}
+                onChange={e => setCredForm({ ...credForm, password: e.target.value })}
+              />
+            </div>
+            <Button
+              onClick={handleCreateLogin}
+              className="w-full mt-3 rounded-xl h-11 font-semibold gap-2"
+              disabled={credLoading}
+            >
+              <KeyRound size={14} />
+              {credLoading ? 'Creating...' : 'Create Login'}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

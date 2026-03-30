@@ -1,10 +1,11 @@
 import { useState, useMemo } from 'react';
 import { useData } from '@/context/DataContext';
+import { useAuth } from '@/context/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { 
   Wrench, ClipboardList, CalendarCheck, ChevronRight, 
-  MapPin, Clock, CheckCircle2, AlertCircle, User, Phone
+  MapPin, Clock, CheckCircle2, AlertCircle, User, LogOut
 } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -29,14 +30,13 @@ const statusIcons: Record<string, typeof Clock> = {
 
 export default function TechnicianPortal() {
   const { technicians, tickets, pmSchedules, updateTicket, updatePMSchedule } = useData();
-  const [selectedTechId, setSelectedTechId] = useState<string>('');
+  const { user, technicianId, signOut } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<TabType>('tickets');
   const [detailTicket, setDetailTicket] = useState<string | null>(null);
   const [detailPM, setDetailPM] = useState<string | null>(null);
 
-  const activeTechnicians = useMemo(() => technicians.filter(t => t.isActive), [technicians]);
-
-  const selectedTech = technicians.find(t => t.id === selectedTechId);
+  const selectedTech = technicians.find(t => t.id === technicianId);
 
   const myTickets = useMemo(
     () => tickets.filter(t => t.assignedTechnician === selectedTech?.name),
@@ -64,38 +64,23 @@ export default function TechnicianPortal() {
     await updatePMSchedule(pmId, { status: status as any });
   };
 
-  if (!selectedTechId) {
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/technician-login');
+  };
+
+  if (!selectedTech) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center p-4">
-        <div className="w-full max-w-sm space-y-6 text-center">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Wrench size={28} className="text-primary" />
+        <div className="w-full max-w-sm space-y-4 text-center">
+          <div className="w-16 h-16 mx-auto rounded-2xl bg-destructive/10 flex items-center justify-center">
+            <AlertCircle size={28} className="text-destructive" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground font-display">Technician Portal</h1>
-            <p className="text-sm text-muted-foreground mt-1">Select your profile to view assignments</p>
-          </div>
-          <div className="space-y-3">
-            {activeTechnicians.map(tech => (
-              <button
-                key={tech.id}
-                onClick={() => setSelectedTechId(tech.id)}
-                className="w-full flex items-center gap-3 p-4 rounded-2xl bg-card border border-border hover:border-primary/30 hover:shadow-md transition-all active:scale-[0.98] text-left"
-              >
-                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
-                  <User size={18} className="text-primary" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold text-foreground truncate">{tech.name}</p>
-                  <p className="text-xs text-muted-foreground truncate">{tech.specialization}</p>
-                </div>
-                <ChevronRight size={16} className="text-muted-foreground shrink-0" />
-              </button>
-            ))}
-            {activeTechnicians.length === 0 && (
-              <p className="text-sm text-muted-foreground py-8">No active technicians found</p>
-            )}
-          </div>
+          <h1 className="text-lg font-bold text-foreground font-display">No Technician Profile</h1>
+          <p className="text-sm text-muted-foreground">Your account is not linked to a technician profile. Contact your administrator.</p>
+          <Button variant="outline" className="rounded-xl gap-2" onClick={handleSignOut}>
+            <LogOut size={14} /> Sign Out
+          </Button>
         </div>
       </div>
     );
@@ -109,16 +94,16 @@ export default function TechnicianPortal() {
           <Wrench size={20} className="text-primary" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-bold text-foreground truncate">{selectedTech?.name}</p>
-          <p className="text-xs text-muted-foreground truncate">{selectedTech?.specialization}</p>
+          <p className="text-sm font-bold text-foreground truncate">{selectedTech.name}</p>
+          <p className="text-xs text-muted-foreground truncate">{selectedTech.specialization}</p>
         </div>
         <Button
           variant="ghost"
           size="sm"
-          className="text-xs text-muted-foreground shrink-0"
-          onClick={() => setSelectedTechId('')}
+          className="text-xs text-muted-foreground shrink-0 gap-1"
+          onClick={handleSignOut}
         >
-          Switch
+          <LogOut size={12} /> Logout
         </Button>
       </div>
 
