@@ -50,8 +50,7 @@ export default function TechnicianLogin() {
             <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
             <input
               type="email"
-              className="w-full mt-2 px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:border-transparent transition-all"
-              style={{ focusRingColor: 'hsl(260, 60%, 55%)' }}
+              className="w-full mt-2 px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
               placeholder="your.email@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
