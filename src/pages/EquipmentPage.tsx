@@ -169,9 +169,12 @@ export default function EquipmentPage() {
                     <td className="px-5 py-3.5">
                       {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[11px] text-muted-foreground">N/A</span>}
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
                         <Pencil size={14} className="text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setQrEquipment(e)}>
+                        <QrCode size={14} className="text-primary" />
                       </Button>
                     </td>
                   </tr>
