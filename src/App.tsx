@@ -11,6 +11,7 @@ import EquipmentPage from "@/pages/EquipmentPage";
 import Tickets from "@/pages/Tickets";
 import AMCContracts from "@/pages/AMCContracts";
 import PMSchedules from "@/pages/PMSchedules";
+import Technicians from "@/pages/Technicians";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/tickets" element={<Tickets />} />
               <Route path="/amc" element={<AMCContracts />} />
               <Route path="/pm-schedules" element={<PMSchedules />} />
+              <Route path="/technicians" element={<Technicians />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </AppLayout>

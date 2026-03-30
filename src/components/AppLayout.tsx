@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Users, Cpu, ClipboardList, Shield, CalendarCheck, 
-  Menu, X, ChevronRight, Bell, Search, Heart, Settings
+  Menu, X, ChevronRight, Bell, Search, Heart, Settings, Wrench
 } from 'lucide-react';
 
 const navItems = [
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/customers', label: 'Customers', icon: Users },
   { path: '/equipment', label: 'Equipment', icon: Cpu },
   { path: '/tickets', label: 'Tickets', icon: ClipboardList },
+  { path: '/technicians', label: 'Technicians', icon: Wrench },
   { path: '/amc', label: 'AMC Contracts', icon: Shield },
   { path: '/pm-schedules', label: 'PM Schedules', icon: CalendarCheck },
 ];

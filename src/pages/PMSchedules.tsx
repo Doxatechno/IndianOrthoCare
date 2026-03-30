@@ -9,7 +9,7 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: PMStatus[] = ['Pending', 'Assigned', 'Completed'];
 
 export default function PMSchedules() {
-  const { pmSchedules: data, updatePMSchedule } = useData();
+  const { pmSchedules: data, updatePMSchedule, technicians } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
