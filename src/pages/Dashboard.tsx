@@ -1,6 +1,7 @@
+import { useMemo } from 'react';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
-  Cpu, Users, ArrowUpRight
+  Cpu, Users, ArrowUpRight, AlertCircle
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import StatusBadge from '@/components/StatusBadge';
@@ -20,6 +21,44 @@ const CHART_COLORS = ['hsl(250,75%,60%)', 'hsl(310,65%,58%)', 'hsl(190,80%,50%)'
 
 export default function Dashboard() {
   const { tickets, equipment, amcContracts, pmSchedules, customers } = useData();
+
+  // Equipment with warranty expiring in next 90 days (potential AMC business)
+  const warrantyExpiringSoon = useMemo(() => {
+    const now = new Date();
+    const in90Days = new Date();
+    in90Days.setDate(now.getDate() + 90);
+
+    return equipment
+      .filter(e => {
+        if (!e.warrantyEndDate) return false;
+        const end = new Date(e.warrantyEndDate);
+        return end >= now && end <= in90Days;
+      })
+      .map(e => {
+        const end = new Date(e.warrantyEndDate!);
+        const daysLeft = Math.ceil((end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && a.status === 'Active');
+        return { ...e, daysLeft, hasAMC };
+      })
+      .filter(e => !e.hasAMC) // Only show those without active AMC
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+  }, [equipment, amcContracts]);
+
+  // Equipment with already expired warranty and no AMC
+  const warrantyExpired = useMemo(() => {
+    const now = new Date();
+    return equipment
+      .filter(e => {
+        if (!e.warrantyEndDate) return false;
+        return new Date(e.warrantyEndDate) < now;
+      })
+      .map(e => {
+        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && (a.status === 'Active' || a.status === 'Paid'));
+        return { ...e, hasAMC };
+      })
+      .filter(e => !e.hasAMC)
+      .slice(0, 5);
+  }, [equipment, amcContracts]);
 
   const topCards = [
     {
@@ -252,6 +291,90 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Warranty Expiry & AMC Opportunities */}
+      {(warrantyExpiringSoon.length > 0 || warrantyExpired.length > 0) && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          {/* Expiring Soon */}
+          {warrantyExpiringSoon.length > 0 && (
+            <div className="glass-card overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: '900ms' }}>
+              <div className="flex items-center justify-between p-5 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-display flex items-center gap-2">
+                    <AlertTriangle size={14} className="text-amber-500" />
+                    Warranty Expiring Soon
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Potential AMC business opportunities</p>
+                </div>
+                <span className="text-[10px] font-bold bg-amber-100 text-amber-700 px-2.5 py-1 rounded-full">{warrantyExpiringSoon.length} items</span>
+              </div>
+              <div className="divide-y divide-border/40">
+                {warrantyExpiringSoon.slice(0, 5).map(e => (
+                  <div key={e.id} className="px-5 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center shrink-0">
+                        <AlertTriangle size={13} className="text-amber-500" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-foreground truncate">{e.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{e.customerName} · {e.serialNumber}</p>
+                      </div>
+                    </div>
+                    <div className="text-right shrink-0">
+                      <p className={`text-xs font-bold ${e.daysLeft <= 15 ? 'text-destructive' : e.daysLeft <= 30 ? 'text-amber-500' : 'text-muted-foreground'}`}>
+                        {e.daysLeft}d left
+                      </p>
+                      <p className="text-[9px] text-muted-foreground">{e.warrantyEndDate}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3">
+                <a href="/amc" className="block text-center text-[11px] text-primary font-semibold py-2 rounded-xl hover:bg-primary/5 transition-colors">
+                  Create AMC Contracts →
+                </a>
+              </div>
+            </div>
+          )}
+
+          {/* Already Expired - No AMC */}
+          {warrantyExpired.length > 0 && (
+            <div className="glass-card overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: '1000ms' }}>
+              <div className="flex items-center justify-between p-5 pb-3">
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-display flex items-center gap-2">
+                    <AlertCircle size={14} className="text-destructive" />
+                    Warranty Expired — No AMC
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">Equipment without coverage — follow up for AMC</p>
+                </div>
+                <span className="text-[10px] font-bold bg-red-100 text-red-700 px-2.5 py-1 rounded-full">{warrantyExpired.length} items</span>
+              </div>
+              <div className="divide-y divide-border/40">
+                {warrantyExpired.map(e => (
+                  <div key={e.id} className="px-5 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                        <Cpu size={13} className="text-destructive" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[13px] font-semibold text-foreground truncate">{e.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{e.customerName}</p>
+                      </div>
+                    </div>
+                    <span className="text-[10px] font-bold text-destructive bg-destructive/10 px-2 py-0.5 rounded-full">Expired</span>
+                  </div>
+                ))}
+              </div>
+              <div className="p-3">
+                <a href="/amc" className="block text-center text-[11px] text-primary font-semibold py-2 rounded-xl hover:bg-primary/5 transition-colors">
+                  Create AMC Contracts →
+                </a>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
