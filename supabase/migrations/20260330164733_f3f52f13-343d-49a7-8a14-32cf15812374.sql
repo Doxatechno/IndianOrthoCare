@@ -1,0 +1,1 @@
+ALTER TABLE public.technicians ADD COLUMN user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL UNIQUE;
