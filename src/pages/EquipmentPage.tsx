@@ -204,6 +204,9 @@ export default function EquipmentPage() {
                   <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
                     <Pencil size={12} className="text-primary" />
                   </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => setQrEquipment(e)}>
+                    <QrCode size={12} className="text-primary" />
+                  </Button>
                   {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[10px] text-muted-foreground">N/A</span>}
                 </div>
               </div>
