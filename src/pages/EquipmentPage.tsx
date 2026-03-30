@@ -17,6 +17,7 @@ export default function EquipmentPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
   const [editForm, setEditForm] = useState<Equipment | null>(null);
+  const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
 
   const filtered = equipment.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase()) ||
