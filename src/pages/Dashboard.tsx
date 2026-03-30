@@ -121,7 +121,8 @@ export default function Dashboard() {
         {topCards.map((card, index) => (
           <div
             key={card.label}
-            className={`${card.gradient} rounded-2xl p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-default opacity-0 animate-fade-in`}
+            onClick={() => navigate(card.link)}
+            className={`${card.gradient} rounded-2xl p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer opacity-0 animate-fade-in`}
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-sm" />
