@@ -1,6 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Search, Plus, Filter, ClipboardList } from 'lucide-react';
-import { tickets as initialTickets, InstallationTicket, TicketStatus, equipment, customers, technicians } from '@/data/mockData';
+import { InstallationTicket, TicketStatus, technicians } from '@/data/mockData';
+import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -12,11 +13,11 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: TicketStatus[] = ['Pending', 'Assigned', 'In Progress', 'Completed', 'Issue Reported'];
 
 export default function Tickets() {
-  const [data, setData] = useState<InstallationTicket[]>(initialTickets);
+  const { tickets: data, equipment, addTicket, updateTicket } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [detailTicket, setDetailTicket] = useState<InstallationTicket | null>(null);
+  const [detailTicketId, setDetailTicketId] = useState<string | null>(null);
   const [form, setForm] = useState({ equipmentId: '', location: '', remarks: '' });
 
   const filtered = data.filter(t => {
@@ -27,40 +28,36 @@ export default function Tickets() {
     return matchSearch && matchStatus;
   });
 
-  const handleAdd = () => {
+  const detailTicket = useMemo(
+    () => data.find(ticket => ticket.id === detailTicketId) ?? null,
+    [data, detailTicketId],
+  );
+
+  const handleAdd = async () => {
     if (!form.equipmentId) return;
-    const eq = equipment.find(e => e.id === form.equipmentId);
-    const cust = customers.find(c => c.id === eq?.customerId);
-    const ticket: InstallationTicket = {
-      id: `TK-${String(data.length + 1).padStart(3, '0')}`,
-      equipmentId: form.equipmentId,
-      equipmentName: eq?.name || '',
-      customerId: eq?.customerId || '',
-      customerName: cust?.name || '',
-      location: form.location,
-      status: 'Pending',
-      assignedTechnician: null,
-      remarks: form.remarks,
-      issueType: null,
-      createdDate: new Date().toISOString().split('T')[0],
-      completedDate: null,
-    };
-    setData([ticket, ...data]);
-    setForm({ equipmentId: '', location: '', remarks: '' });
-    setDialogOpen(false);
+    try {
+      await addTicket(form);
+      setForm({ equipmentId: '', location: '', remarks: '' });
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to create ticket:', error);
+    }
   };
 
-  const assignTechnician = (ticketId: string, tech: string) => {
-    setData(data.map(t => t.id === ticketId ? { ...t, assignedTechnician: tech, status: 'Assigned' as TicketStatus } : t));
-    setDetailTicket(prev => prev && prev.id === ticketId ? { ...prev, assignedTechnician: tech, status: 'Assigned' } : prev);
+  const assignTechnician = async (ticketId: string, tech: string) => {
+    try {
+      await updateTicket(ticketId, { assignedTechnician: tech, status: 'Assigned' });
+    } catch (error) {
+      console.error('Failed to assign technician:', error);
+    }
   };
 
-  const updateStatus = (ticketId: string, status: TicketStatus) => {
-    setData(data.map(t => {
-      if (t.id !== ticketId) return t;
-      return { ...t, status, completedDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : t.completedDate };
-    }));
-    setDetailTicket(prev => prev && prev.id === ticketId ? { ...prev, status, completedDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : prev.completedDate } : prev);
+  const updateStatus = async (ticketId: string, status: TicketStatus) => {
+    try {
+      await updateTicket(ticketId, { status });
+    } catch (error) {
+      console.error('Failed to update status:', error);
+    }
   };
 
   return (
@@ -114,7 +111,6 @@ export default function Tickets() {
         </Select>
       </div>
 
-      {/* Mobile: Card view, Desktop: Table */}
       <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -130,7 +126,7 @@ export default function Tickets() {
             </thead>
             <tbody className="divide-y divide-border/40">
               {filtered.map(t => (
-                <tr key={t.id} className="hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setDetailTicket(t)}>
+                <tr key={t.id} className="hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setDetailTicketId(t.id)}>
                   <td className="px-5 py-3.5">
                     <p className="font-semibold text-foreground">{t.equipmentName}</p>
                     <p className="text-[11px] text-muted-foreground">{t.id} · {t.location}</p>
@@ -147,14 +143,13 @@ export default function Tickets() {
         </div>
       </div>
 
-      {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {filtered.map((t, i) => (
-          <div 
-            key={t.id} 
+          <div
+            key={t.id}
             className="glass-card p-4 active:scale-[0.98] transition-all cursor-pointer animate-fade-in"
             style={{ animationDelay: `${i * 50}ms` }}
-            onClick={() => setDetailTicket(t)}
+            onClick={() => setDetailTicketId(t.id)}
           >
             <div className="flex items-start justify-between mb-2">
               <div className="flex items-center gap-2.5">
@@ -176,8 +171,7 @@ export default function Tickets() {
         ))}
       </div>
 
-      {/* Detail Dialog */}
-      <Dialog open={!!detailTicket} onOpenChange={() => setDetailTicket(null)}>
+      <Dialog open={!!detailTicket} onOpenChange={() => setDetailTicketId(null)}>
         <DialogContent className="sm:max-w-lg rounded-2xl">
           {detailTicket && (
             <>
@@ -199,7 +193,7 @@ export default function Tickets() {
                   {detailTicket.issueType && <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Issue</span><span className="font-semibold text-foreground">{detailTicket.issueType}</span></div>}
                 </div>
                 {detailTicket.remarks && <div className="bg-secondary/50 rounded-xl p-3 text-sm"><span className="text-[11px] text-muted-foreground block font-medium mb-1">Remarks</span><span className="text-foreground">{detailTicket.remarks}</span></div>}
-                
+
                 <div className="border-t border-border/50 pt-4 space-y-3">
                   <div>
                     <Label className="text-xs font-semibold text-muted-foreground">Assign Technician</Label>

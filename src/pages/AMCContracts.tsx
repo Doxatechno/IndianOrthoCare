@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Plus, IndianRupee, Shield } from 'lucide-react';
-import { amcContracts as initialAMC, AMCContract, AMCStatus, equipment, customers } from '@/data/mockData';
+import { AMCStatus } from '@/data/mockData';
+import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -11,7 +12,7 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: AMCStatus[] = ['Quotation Sent', 'Approved', 'Payment Pending', 'Paid', 'Active'];
 
 export default function AMCContracts() {
-  const [data, setData] = useState<AMCContract[]>(initialAMC);
+  const { amcContracts: data, equipment, addAMCContract, updateAMCStatus } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ equipmentId: '', startDate: '', endDate: '', price: '' });
@@ -21,28 +22,28 @@ export default function AMCContracts() {
     a.customerName.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.equipmentId) return;
-    const eq = equipment.find(e => e.id === form.equipmentId);
-    const cust = customers.find(c => c.id === eq?.customerId);
-    const amc: AMCContract = {
-      id: `AMC-${String(data.length + 1).padStart(3, '0')}`,
-      equipmentId: form.equipmentId,
-      equipmentName: eq?.name || '',
-      customerId: eq?.customerId || '',
-      customerName: cust?.name || '',
-      startDate: form.startDate,
-      endDate: form.endDate,
-      price: Number(form.price) || 0,
-      status: 'Quotation Sent',
-    };
-    setData([amc, ...data]);
-    setForm({ equipmentId: '', startDate: '', endDate: '', price: '' });
-    setDialogOpen(false);
+    try {
+      await addAMCContract({
+        equipmentId: form.equipmentId,
+        startDate: form.startDate,
+        endDate: form.endDate,
+        price: Number(form.price) || 0,
+      });
+      setForm({ equipmentId: '', startDate: '', endDate: '', price: '' });
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to create AMC contract:', error);
+    }
   };
 
-  const updateStatus = (amcId: string, status: AMCStatus) => {
-    setData(data.map(a => a.id === amcId ? { ...a, status } : a));
+  const updateStatus = async (amcId: string, status: AMCStatus) => {
+    try {
+      await updateAMCStatus(amcId, status);
+    } catch (error) {
+      console.error('Failed to update AMC status:', error);
+    }
   };
 
   return (
@@ -93,7 +94,6 @@ export default function AMCContracts() {
         <Input placeholder="Search AMC contracts..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      {/* Desktop Table */}
       <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -133,7 +133,6 @@ export default function AMCContracts() {
         </div>
       </div>
 
-      {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {filtered.map((a, i) => (
           <div key={a.id} className="glass-card p-4 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
