@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Filter } from 'lucide-react';
+import { Search, Plus, Filter, ClipboardList } from 'lucide-react';
 import { tickets as initialTickets, InstallationTicket, TicketStatus, equipment, customers, technicians } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -58,47 +58,43 @@ export default function Tickets() {
   const updateStatus = (ticketId: string, status: TicketStatus) => {
     setData(data.map(t => {
       if (t.id !== ticketId) return t;
-      return {
-        ...t,
-        status,
-        completedDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : t.completedDate,
-      };
+      return { ...t, status, completedDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : t.completedDate };
     }));
     setDetailTicket(prev => prev && prev.id === ticketId ? { ...prev, status, completedDate: status === 'Completed' ? new Date().toISOString().split('T')[0] : prev.completedDate } : prev);
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="page-header">Installation Tickets</h1>
+          <h1 className="page-header font-display">Installation Tickets</h1>
           <p className="page-subheader">Track installation progress</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus size={16} /> Create Ticket</Button>
+            <Button className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"><Plus size={16} /> Create Ticket</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>New Installation Ticket</DialogTitle></DialogHeader>
+          <DialogContent className="sm:max-w-md rounded-2xl">
+            <DialogHeader><DialogTitle className="font-display">New Installation Ticket</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               <div>
-                <Label className="text-xs font-medium">Equipment</Label>
+                <Label className="text-xs font-semibold text-muted-foreground">Equipment</Label>
                 <Select value={form.equipmentId} onValueChange={v => setForm({ ...form, equipmentId: v })}>
-                  <SelectTrigger className="mt-1"><SelectValue placeholder="Select equipment" /></SelectTrigger>
+                  <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select equipment" /></SelectTrigger>
                   <SelectContent>
                     {equipment.map(e => <SelectItem key={e.id} value={e.id}>{e.name} ({e.serialNumber})</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <Label className="text-xs font-medium">Location</Label>
-                <Input className="mt-1" placeholder="e.g. Radiology Dept, 2nd Floor" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
+                <Label className="text-xs font-semibold text-muted-foreground">Location</Label>
+                <Input className="mt-1.5 rounded-xl" placeholder="e.g. Radiology Dept, 2nd Floor" value={form.location} onChange={e => setForm({ ...form, location: e.target.value })} />
               </div>
               <div>
-                <Label className="text-xs font-medium">Remarks</Label>
-                <Textarea className="mt-1" placeholder="Any notes..." value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} />
+                <Label className="text-xs font-semibold text-muted-foreground">Remarks</Label>
+                <Textarea className="mt-1.5 rounded-xl" placeholder="Any notes..." value={form.remarks} onChange={e => setForm({ ...form, remarks: e.target.value })} />
               </div>
-              <Button onClick={handleAdd} className="w-full mt-2">Create Ticket</Button>
+              <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Create Ticket</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -107,10 +103,10 @@ export default function Tickets() {
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative max-w-sm flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-          <Input placeholder="Search tickets..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+          <Input placeholder="Search tickets..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44"><Filter size={14} className="mr-2" /><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-44 rounded-xl"><Filter size={14} className="mr-2" /><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
@@ -118,31 +114,32 @@ export default function Tickets() {
         </Select>
       </div>
 
-      <div className="bg-card rounded-xl border border-border/50 shadow-sm overflow-hidden">
+      {/* Mobile: Card view, Desktop: Table */}
+      <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-border/50 bg-secondary/50">
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Ticket</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Customer</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden lg:table-cell">Technician</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide">Status</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold text-muted-foreground uppercase tracking-wide hidden md:table-cell">Created</th>
-                <th className="px-4 py-3"></th>
+              <tr className="border-b border-border/50 bg-secondary/40">
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Ticket</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Customer</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider hidden lg:table-cell">Technician</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Created</th>
+                <th className="px-5 py-3.5"></th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-border/50">
+            <tbody className="divide-y divide-border/40">
               {filtered.map(t => (
                 <tr key={t.id} className="hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setDetailTicket(t)}>
-                  <td className="px-4 py-3">
-                    <p className="font-medium text-foreground">{t.equipmentName}</p>
-                    <p className="text-xs text-muted-foreground">{t.id} · {t.location}</p>
+                  <td className="px-5 py-3.5">
+                    <p className="font-semibold text-foreground">{t.equipmentName}</p>
+                    <p className="text-[11px] text-muted-foreground">{t.id} · {t.location}</p>
                   </td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{t.customerName}</td>
-                  <td className="px-4 py-3 text-muted-foreground hidden lg:table-cell">{t.assignedTechnician || '—'}</td>
-                  <td className="px-4 py-3"><StatusBadge status={t.status} /></td>
-                  <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{t.createdDate}</td>
-                  <td className="px-4 py-3 text-xs text-primary font-medium">View</td>
+                  <td className="px-5 py-3.5 text-muted-foreground">{t.customerName}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground hidden lg:table-cell">{t.assignedTechnician || '—'}</td>
+                  <td className="px-5 py-3.5"><StatusBadge status={t.status} /></td>
+                  <td className="px-5 py-3.5 text-muted-foreground text-[12px]">{t.createdDate}</td>
+                  <td className="px-5 py-3.5 text-xs text-primary font-semibold">View</td>
                 </tr>
               ))}
             </tbody>
@@ -150,41 +147,73 @@ export default function Tickets() {
         </div>
       </div>
 
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-3">
+        {filtered.map((t, i) => (
+          <div 
+            key={t.id} 
+            className="glass-card p-4 active:scale-[0.98] transition-all cursor-pointer animate-fade-in"
+            style={{ animationDelay: `${i * 50}ms` }}
+            onClick={() => setDetailTicket(t)}
+          >
+            <div className="flex items-start justify-between mb-2">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <ClipboardList size={14} className="text-primary" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-foreground">{t.equipmentName}</p>
+                  <p className="text-[11px] text-muted-foreground">{t.id}</p>
+                </div>
+              </div>
+              <StatusBadge status={t.status} />
+            </div>
+            <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/40">
+              <span>{t.customerName}</span>
+              <span>{t.assignedTechnician || 'Unassigned'}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+
       {/* Detail Dialog */}
       <Dialog open={!!detailTicket} onOpenChange={() => setDetailTicket(null)}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-lg rounded-2xl">
           {detailTicket && (
             <>
               <DialogHeader>
-                <DialogTitle className="flex items-center gap-2">
+                <DialogTitle className="flex items-center gap-2.5 font-display">
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <ClipboardList size={14} className="text-primary" />
+                  </div>
                   {detailTicket.id} — {detailTicket.equipmentName}
                 </DialogTitle>
               </DialogHeader>
               <div className="space-y-4 pt-2">
                 <div className="grid grid-cols-2 gap-3 text-sm">
-                  <div><span className="text-xs text-muted-foreground block">Customer</span>{detailTicket.customerName}</div>
-                  <div><span className="text-xs text-muted-foreground block">Location</span>{detailTicket.location}</div>
-                  <div><span className="text-xs text-muted-foreground block">Status</span><StatusBadge status={detailTicket.status} /></div>
-                  <div><span className="text-xs text-muted-foreground block">Created</span>{detailTicket.createdDate}</div>
-                  {detailTicket.completedDate && <div><span className="text-xs text-muted-foreground block">Completed</span>{detailTicket.completedDate}</div>}
-                  {detailTicket.issueType && <div><span className="text-xs text-muted-foreground block">Issue</span>{detailTicket.issueType}</div>}
+                  <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Customer</span><span className="font-semibold text-foreground">{detailTicket.customerName}</span></div>
+                  <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Location</span><span className="font-semibold text-foreground">{detailTicket.location}</span></div>
+                  <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Status</span><div className="mt-1"><StatusBadge status={detailTicket.status} /></div></div>
+                  <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Created</span><span className="font-semibold text-foreground">{detailTicket.createdDate}</span></div>
+                  {detailTicket.completedDate && <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Completed</span><span className="font-semibold text-foreground">{detailTicket.completedDate}</span></div>}
+                  {detailTicket.issueType && <div className="bg-secondary/50 rounded-xl p-3"><span className="text-[11px] text-muted-foreground block font-medium">Issue</span><span className="font-semibold text-foreground">{detailTicket.issueType}</span></div>}
                 </div>
-                {detailTicket.remarks && <div className="text-sm"><span className="text-xs text-muted-foreground block mb-1">Remarks</span>{detailTicket.remarks}</div>}
+                {detailTicket.remarks && <div className="bg-secondary/50 rounded-xl p-3 text-sm"><span className="text-[11px] text-muted-foreground block font-medium mb-1">Remarks</span><span className="text-foreground">{detailTicket.remarks}</span></div>}
                 
-                <div className="border-t border-border/50 pt-3 space-y-3">
+                <div className="border-t border-border/50 pt-4 space-y-3">
                   <div>
-                    <Label className="text-xs font-medium">Assign Technician</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground">Assign Technician</Label>
                     <Select value={detailTicket.assignedTechnician || ''} onValueChange={v => assignTechnician(detailTicket.id, v)}>
-                      <SelectTrigger className="mt-1"><SelectValue placeholder="Select technician" /></SelectTrigger>
+                      <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select technician" /></SelectTrigger>
                       <SelectContent>
                         {technicians.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
-                    <Label className="text-xs font-medium">Update Status</Label>
+                    <Label className="text-xs font-semibold text-muted-foreground">Update Status</Label>
                     <Select value={detailTicket.status} onValueChange={v => updateStatus(detailTicket.id, v as TicketStatus)}>
-                      <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
+                      <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
                       <SelectContent>
                         {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
                       </SelectContent>

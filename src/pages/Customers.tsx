@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Search, Phone, Mail, MapPin } from 'lucide-react';
+import { Plus, Search, Phone, Mail, MapPin, Building2 } from 'lucide-react';
 import { customers as initialCustomers, Customer } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -30,18 +30,18 @@ export default function Customers() {
   };
 
   return (
-    <div className="space-y-4 animate-fade-in">
+    <div className="space-y-5 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="page-header">Customers</h1>
+          <h1 className="page-header font-display">Customers</h1>
           <p className="page-subheader">Manage hospitals and labs</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
-            <Button className="gap-2"><Plus size={16} /> Add Customer</Button>
+            <Button className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"><Plus size={16} /> Add Customer</Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
-            <DialogHeader><DialogTitle>New Customer</DialogTitle></DialogHeader>
+          <DialogContent className="sm:max-w-md rounded-2xl">
+            <DialogHeader><DialogTitle className="font-display">New Customer</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               {[
                 { key: 'name', label: 'Customer Name', placeholder: 'e.g. City General Hospital' },
@@ -51,16 +51,16 @@ export default function Customers() {
                 { key: 'address', label: 'Address', placeholder: 'Full address' },
               ].map(field => (
                 <div key={field.key}>
-                  <Label className="text-xs font-medium">{field.label}</Label>
+                  <Label className="text-xs font-semibold text-muted-foreground">{field.label}</Label>
                   <Input
-                    className="mt-1"
+                    className="mt-1.5 rounded-xl"
                     placeholder={field.placeholder}
                     value={form[field.key as keyof typeof form]}
                     onChange={e => setForm({ ...form, [field.key]: e.target.value })}
                   />
                 </div>
               ))}
-              <Button onClick={handleAdd} className="w-full mt-2">Create Customer</Button>
+              <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Create Customer</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -68,23 +68,32 @@ export default function Customers() {
 
       <div className="relative max-w-sm">
         <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search customers..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
+        <Input placeholder="Search customers..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map(c => (
-          <div key={c.id} className="bg-card rounded-xl p-5 border border-border/50 shadow-sm hover:shadow-md transition-shadow">
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h3 className="text-sm font-semibold text-foreground">{c.name}</h3>
-                <p className="text-xs text-muted-foreground mt-0.5">{c.contactPerson}</p>
+        {filtered.map((c, i) => (
+          <div 
+            key={c.id} 
+            className="glass-card p-5 hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 animate-fade-in"
+            style={{ animationDelay: `${i * 60}ms` }}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                  <Building2 size={18} className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground font-display">{c.name}</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{c.contactPerson}</p>
+                </div>
               </div>
-              <span className="text-[10px] font-mono text-muted-foreground bg-secondary px-2 py-0.5 rounded">{c.id}</span>
+              <span className="text-[10px] font-mono font-semibold text-muted-foreground bg-secondary px-2 py-0.5 rounded-full">{c.id}</span>
             </div>
-            <div className="space-y-1.5 text-xs text-muted-foreground">
-              <div className="flex items-center gap-2"><Phone size={12} /> {c.phone}</div>
-              <div className="flex items-center gap-2"><Mail size={12} /> {c.email}</div>
-              <div className="flex items-center gap-2"><MapPin size={12} /> {c.address}</div>
+            <div className="space-y-2 text-[12px] text-muted-foreground">
+              <div className="flex items-center gap-2.5"><Phone size={13} className="text-primary/60 shrink-0" /> <span className="truncate">{c.phone}</span></div>
+              <div className="flex items-center gap-2.5"><Mail size={13} className="text-primary/60 shrink-0" /> <span className="truncate">{c.email}</span></div>
+              <div className="flex items-start gap-2.5"><MapPin size={13} className="text-primary/60 mt-0.5 shrink-0" /> <span className="line-clamp-2">{c.address}</span></div>
             </div>
           </div>
         ))}
