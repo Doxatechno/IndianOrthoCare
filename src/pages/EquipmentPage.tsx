@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Search, Plus, Cpu, Pencil } from 'lucide-react';
+import { Search, Plus, Cpu, Pencil, QrCode } from 'lucide-react';
+import EquipmentQRLabel from '@/components/EquipmentQRLabel';
 import { Equipment } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
