@@ -40,7 +40,7 @@ export default function EquipmentQRLabel({ open, onOpenChange, equipment }: Prop
         </head>
         <body>
           <div class="label">
-            <div class="company">MedServ Pro</div>
+            <div class="company">Doxa CareX</div>
             ${labelRef.current.querySelector('.qr-container')?.innerHTML || ''}
             <div class="name">${equipment.name}</div>
             <div class="detail">${equipment.modelNumber} · ${equipment.serialNumber}</div>
@@ -81,7 +81,7 @@ export default function EquipmentQRLabel({ open, onOpenChange, equipment }: Prop
           <DialogTitle className="font-display text-center">Equipment QR Label</DialogTitle>
         </DialogHeader>
         <div ref={labelRef} className="flex flex-col items-center py-4 space-y-3">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">MedServ Pro</p>
+          <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground font-semibold">Doxa CareX</p>
           <div className="qr-container p-3 bg-white rounded-xl border border-border shadow-sm">
             <QRCodeSVG value={ticketUrl} size={180} level="H" includeMargin={false} />
           </div>

@@ -98,7 +98,7 @@ export default function TechnicianPortal() {
               <Stethoscope size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-base font-bold text-white">MedServ Pro</h1>
+              <h1 className="text-base font-bold text-white">Doxa CareX</h1>
               <p className="text-[10px] text-white/40 uppercase tracking-[0.15em] font-medium">Technician Portal</p>
             </div>
           </div>
