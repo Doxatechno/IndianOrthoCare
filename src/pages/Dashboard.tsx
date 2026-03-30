@@ -22,6 +22,44 @@ const CHART_COLORS = ['hsl(250,75%,60%)', 'hsl(310,65%,58%)', 'hsl(190,80%,50%)'
 export default function Dashboard() {
   const { tickets, equipment, amcContracts, pmSchedules, customers } = useData();
 
+  // Equipment with warranty expiring in next 90 days (potential AMC business)
+  const warrantyExpiringSoon = useMemo(() => {
+    const now = new Date();
+    const in90Days = new Date();
+    in90Days.setDate(now.getDate() + 90);
+
+    return equipment
+      .filter(e => {
+        if (!e.warrantyEndDate) return false;
+        const end = new Date(e.warrantyEndDate);
+        return end >= now && end <= in90Days;
+      })
+      .map(e => {
+        const end = new Date(e.warrantyEndDate!);
+        const daysLeft = Math.ceil((end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
+        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && a.status === 'Active');
+        return { ...e, daysLeft, hasAMC };
+      })
+      .filter(e => !e.hasAMC) // Only show those without active AMC
+      .sort((a, b) => a.daysLeft - b.daysLeft);
+  }, [equipment, amcContracts]);
+
+  // Equipment with already expired warranty and no AMC
+  const warrantyExpired = useMemo(() => {
+    const now = new Date();
+    return equipment
+      .filter(e => {
+        if (!e.warrantyEndDate) return false;
+        return new Date(e.warrantyEndDate) < now;
+      })
+      .map(e => {
+        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && (a.status === 'Active' || a.status === 'Paid'));
+        return { ...e, hasAMC };
+      })
+      .filter(e => !e.hasAMC)
+      .slice(0, 5);
+  }, [equipment, amcContracts]);
+
   const topCards = [
     {
       label: 'Installations',
