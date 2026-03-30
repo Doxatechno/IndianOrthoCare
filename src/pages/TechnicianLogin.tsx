@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Heart, LogIn, Eye, EyeOff } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Heart, LogIn, Eye, EyeOff, Stethoscope } from 'lucide-react';
 
 export default function TechnicianLogin() {
   const { signIn } = useAuth();
@@ -29,26 +26,31 @@ export default function TechnicianLogin() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <div className="w-full max-w-sm space-y-8">
-        {/* Logo */}
-        <div className="text-center space-y-3">
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-            <Heart size={28} className="text-primary" fill="currentColor" />
-          </div>
-          <div>
-            <h1 className="text-xl font-bold text-foreground font-display">MedServ Pro</h1>
-            <p className="text-sm text-muted-foreground mt-1">Technician Login</p>
-          </div>
+    <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(160deg, hsl(270, 60%, 55%) 0%, hsl(250, 65%, 40%) 50%, hsl(240, 55%, 30%) 100%)' }}>
+      {/* Top decorative area */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 pt-12 pb-6 relative overflow-hidden">
+        {/* Decorative circles */}
+        <div className="absolute top-[-60px] right-[-40px] w-48 h-48 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, white 0%, transparent 70%)' }} />
+        <div className="absolute bottom-[-20px] left-[-30px] w-32 h-32 rounded-full opacity-8" style={{ background: 'radial-gradient(circle, white 0%, transparent 70%)' }} />
+        
+        <div className="w-20 h-20 rounded-3xl flex items-center justify-center mb-5 shadow-2xl" style={{ background: 'linear-gradient(135deg, hsl(280, 70%, 65%), hsl(260, 60%, 50%))' }}>
+          <Stethoscope size={36} className="text-white" />
         </div>
+        <h1 className="text-2xl font-bold text-white tracking-tight font-display">MedServ Pro</h1>
+        <p className="text-white/60 text-sm mt-1">Technician Portal</p>
+      </div>
 
-        {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Form card */}
+      <div className="bg-white rounded-t-[32px] px-6 pt-8 pb-10 shadow-2xl" style={{ minHeight: '55vh' }}>
+        <h2 className="text-lg font-bold text-gray-800 mb-1">Welcome Back</h2>
+        <p className="text-sm text-gray-400 mb-6">Sign in to access your assignments</p>
+
+        <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground">Email</Label>
-            <Input
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Email</label>
+            <input
               type="email"
-              className="mt-1.5 rounded-xl"
+              className="w-full mt-2 px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-transparent transition-all"
               placeholder="your.email@example.com"
               value={email}
               onChange={e => setEmail(e.target.value)}
@@ -56,11 +58,11 @@ export default function TechnicianLogin() {
             />
           </div>
           <div>
-            <Label className="text-xs font-semibold text-muted-foreground">Password</Label>
-            <div className="relative mt-1.5">
-              <Input
+            <label className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Password</label>
+            <div className="relative mt-2">
+              <input
                 type={showPassword ? 'text' : 'password'}
-                className="rounded-xl pr-10"
+                className="w-full px-4 py-3.5 rounded-2xl border border-gray-200 bg-gray-50/80 text-sm text-gray-800 placeholder:text-gray-300 focus:outline-none focus:ring-2 focus:border-transparent pr-12 transition-all"
                 placeholder="••••••••"
                 value={password}
                 onChange={e => setPassword(e.target.value)}
@@ -69,28 +71,31 @@ export default function TechnicianLogin() {
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
-                {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
           </div>
 
           {error && (
-            <p className="text-xs text-destructive bg-destructive/10 rounded-xl p-3">{error}</p>
+            <div className="rounded-2xl px-4 py-3 text-xs font-medium" style={{ background: 'hsl(0, 80%, 95%)', color: 'hsl(0, 70%, 45%)' }}>
+              {error}
+            </div>
           )}
 
-          <Button
+          <button
             type="submit"
-            className="w-full rounded-xl h-11 font-semibold gap-2"
             disabled={loading}
+            className="w-full py-4 rounded-2xl text-white font-bold text-sm shadow-lg hover:shadow-xl active:scale-[0.98] transition-all disabled:opacity-60 flex items-center justify-center gap-2"
+            style={{ background: 'linear-gradient(135deg, hsl(170, 70%, 50%), hsl(160, 65%, 45%))' }}
           >
-            <LogIn size={16} />
+            <LogIn size={18} />
             {loading ? 'Signing in...' : 'Sign In'}
-          </Button>
+          </button>
         </form>
 
-        <p className="text-center text-xs text-muted-foreground">
+        <p className="text-center text-xs text-gray-400 mt-6">
           Contact your administrator if you need access
         </p>
       </div>

@@ -6,8 +6,8 @@ export default function TechProtectedRoute({ children }: { children: React.React
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full" />
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'linear-gradient(160deg, hsl(270, 60%, 55%) 0%, hsl(250, 65%, 40%) 50%, hsl(240, 55%, 30%) 100%)' }}>
+        <div className="animate-spin w-10 h-10 border-3 border-white/30 border-t-white rounded-full" />
       </div>
     );
   }
@@ -16,5 +16,5 @@ export default function TechProtectedRoute({ children }: { children: React.React
     return <Navigate to="/technician-login" replace />;
   }
 
-  return <div className="min-h-screen bg-background p-4">{children}</div>;
+  return <>{children}</>;
 }
