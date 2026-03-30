@@ -86,7 +86,7 @@ export default function PMSchedules() {
                     <Select value={p.assignedTechnician || ''} onValueChange={v => assignTechnician(p.id, v)}>
                       <SelectTrigger className="h-8 text-xs w-32 rounded-lg"><SelectValue placeholder="Assign" /></SelectTrigger>
                       <SelectContent>
-                        {technicians.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                        {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </td>
@@ -128,7 +128,7 @@ export default function PMSchedules() {
               <Select value={p.assignedTechnician || ''} onValueChange={v => assignTechnician(p.id, v)}>
                 <SelectTrigger className="h-9 text-xs rounded-xl"><SelectValue placeholder="Assign tech" /></SelectTrigger>
                 <SelectContent>
-                  {technicians.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                  {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
                 </SelectContent>
               </Select>
               <Select value={p.status} onValueChange={v => updateStatus(p.id, v as PMStatus)}>
