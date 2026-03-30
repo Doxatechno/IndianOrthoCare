@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
-type TabType = 'tickets' | 'pm';
+type TabType = 'tickets' | 'pm' | 'activity';
 
 const statusGradients: Record<string, string> = {
   Pending: 'from-amber-400 to-orange-400',
