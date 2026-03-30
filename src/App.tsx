@@ -16,6 +16,7 @@ import Technicians from "@/pages/Technicians";
 import TechnicianPortal from "@/pages/TechnicianPortal";
 import TechnicianLogin from "@/pages/TechnicianLogin";
 import TechProtectedRoute from "@/components/TechProtectedRoute";
+import RaiseTicket from "@/pages/RaiseTicket";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -38,6 +39,7 @@ const App = () => (
           <BrowserRouter>
             <Routes>
               <Route path="/technician-login" element={<TechnicianLogin />} />
+              <Route path="/raise-ticket/:equipmentId" element={<RaiseTicket />} />
               <Route path="/technician-portal" element={
                 <TechProtectedRoute>
                   <TechnicianPortal />

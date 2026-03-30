@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Search, Plus, Cpu, Pencil } from 'lucide-react';
+import { Search, Plus, Cpu, Pencil, QrCode } from 'lucide-react';
+import EquipmentQRLabel from '@/components/EquipmentQRLabel';
 import { Equipment } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
@@ -16,6 +17,7 @@ export default function EquipmentPage() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
   const [editForm, setEditForm] = useState<Equipment | null>(null);
+  const [qrEquipment, setQrEquipment] = useState<Equipment | null>(null);
 
   const filtered = equipment.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -167,9 +169,12 @@ export default function EquipmentPage() {
                     <td className="px-5 py-3.5">
                       {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[11px] text-muted-foreground">N/A</span>}
                     </td>
-                    <td className="px-5 py-3.5">
+                    <td className="px-5 py-3.5 flex items-center gap-1">
                       <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
                         <Pencil size={14} className="text-primary" />
+                      </Button>
+                      <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg hover:bg-primary/10" onClick={() => setQrEquipment(e)}>
+                        <QrCode size={14} className="text-primary" />
                       </Button>
                     </td>
                   </tr>
@@ -199,6 +204,9 @@ export default function EquipmentPage() {
                   <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => handleEdit(e)}>
                     <Pencil size={12} className="text-primary" />
                   </Button>
+                  <Button variant="ghost" size="icon" className="h-7 w-7 rounded-lg hover:bg-primary/10" onClick={() => setQrEquipment(e)}>
+                    <QrCode size={12} className="text-primary" />
+                  </Button>
                   {ws ? <StatusBadge status={ws === 'Expired' ? 'Issue Reported' : ws === 'Expiring Soon' ? 'Pending' : 'Active'} /> : <span className="text-[10px] text-muted-foreground">N/A</span>}
                 </div>
               </div>
@@ -210,6 +218,14 @@ export default function EquipmentPage() {
           );
         })}
       </div>
+
+      {qrEquipment && (
+        <EquipmentQRLabel
+          open={!!qrEquipment}
+          onOpenChange={(open) => !open && setQrEquipment(null)}
+          equipment={qrEquipment}
+        />
+      )}
     </div>
   );
 }
