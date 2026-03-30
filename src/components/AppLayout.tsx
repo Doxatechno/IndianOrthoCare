@@ -13,6 +13,7 @@ const navItems = [
   { path: '/technicians', label: 'Technicians', icon: Wrench },
   { path: '/amc', label: 'AMC Contracts', icon: Shield },
   { path: '/pm-schedules', label: 'PM Schedules', icon: CalendarCheck },
+  { path: '/technician-portal', label: 'Tech Portal', icon: Wrench },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {

@@ -12,6 +12,7 @@ import Tickets from "@/pages/Tickets";
 import AMCContracts from "@/pages/AMCContracts";
 import PMSchedules from "@/pages/PMSchedules";
 import Technicians from "@/pages/Technicians";
+import TechnicianPortal from "@/pages/TechnicianPortal";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
