@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Plus, Cpu } from 'lucide-react';
-import { equipment as initialEquipment, Equipment, customers } from '@/data/mockData';
+import { Equipment } from '@/data/mockData';
+import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -9,12 +10,12 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import StatusBadge from '@/components/StatusBadge';
 
 export default function EquipmentPage() {
-  const [data, setData] = useState<Equipment[]>(initialEquipment);
+  const { customers, equipment, setEquipment } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
 
-  const filtered = data.filter(e =>
+  const filtered = equipment.filter(e =>
     e.name.toLowerCase().includes(search.toLowerCase()) ||
     e.serialNumber.toLowerCase().includes(search.toLowerCase()) ||
     e.customerName.toLowerCase().includes(search.toLowerCase())
@@ -24,7 +25,7 @@ export default function EquipmentPage() {
     if (!form.name || !form.customerId) return;
     const customer = customers.find(c => c.id === form.customerId);
     const newEquipment: Equipment = {
-      id: `E${String(data.length + 1).padStart(3, '0')}`,
+      id: `E${String(equipment.length + 1).padStart(3, '0')}`,
       name: form.name,
       modelNumber: form.modelNumber,
       serialNumber: form.serialNumber,
@@ -34,7 +35,7 @@ export default function EquipmentPage() {
       warrantyStartDate: null,
       warrantyEndDate: null,
     };
-    setData([newEquipment, ...data]);
+    setEquipment(prev => [newEquipment, ...prev]);
     setForm({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
     setDialogOpen(false);
   };
