@@ -40,7 +40,7 @@ export default function EquipmentQRLabel({ open, onOpenChange, equipment }: Prop
         </head>
         <body>
           <div class="label">
-            <div class="company">MedServ Pro</div>
+            <div class="company">Doxa CareX</div>
             ${labelRef.current.querySelector('.qr-container')?.innerHTML || ''}
             <div class="name">${equipment.name}</div>
             <div class="detail">${equipment.modelNumber} · ${equipment.serialNumber}</div>
