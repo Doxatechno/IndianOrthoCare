@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import StatusBadge from '@/components/StatusBadge';
 
 export default function EquipmentPage() {
-  const { customers, equipment, setEquipment } = useData();
+  const { customers, equipment, addEquipment, updateEquipment } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
@@ -23,23 +23,15 @@ export default function EquipmentPage() {
     e.customerName.toLowerCase().includes(search.toLowerCase())
   );
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!form.name || !form.customerId) return;
-    const customer = customers.find(c => c.id === form.customerId);
-    const newEquipment: Equipment = {
-      id: `E${String(equipment.length + 1).padStart(3, '0')}`,
-      name: form.name,
-      modelNumber: form.modelNumber,
-      serialNumber: form.serialNumber,
-      customerId: form.customerId,
-      customerName: customer?.name || '',
-      installationDate: null,
-      warrantyStartDate: null,
-      warrantyEndDate: null,
-    };
-    setEquipment(prev => [newEquipment, ...prev]);
-    setForm({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
-    setDialogOpen(false);
+    try {
+      await addEquipment(form);
+      setForm({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to add equipment:', error);
+    }
   };
 
   const handleEdit = (e: Equipment) => {
@@ -47,12 +39,15 @@ export default function EquipmentPage() {
     setEditDialogOpen(true);
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!editForm || !editForm.name || !editForm.customerId) return;
-    const customer = customers.find(c => c.id === editForm.customerId);
-    setEquipment(prev => prev.map(eq => eq.id === editForm.id ? { ...editForm, customerName: customer?.name || editForm.customerName } : eq));
-    setEditDialogOpen(false);
-    setEditForm(null);
+    try {
+      await updateEquipment(editForm);
+      setEditDialogOpen(false);
+      setEditForm(null);
+    } catch (error) {
+      console.error('Failed to update equipment:', error);
+    }
   };
 
   const getWarrantyStatus = (e: Equipment) => {
@@ -111,7 +106,6 @@ export default function EquipmentPage() {
         <Input placeholder="Search by name, serial, customer..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
 
-      {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader><DialogTitle className="font-display">Edit Equipment</DialogTitle></DialogHeader>
@@ -144,7 +138,6 @@ export default function EquipmentPage() {
         </DialogContent>
       </Dialog>
 
-      {/* Desktop Table */}
       <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -187,7 +180,6 @@ export default function EquipmentPage() {
         </div>
       </div>
 
-      {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {filtered.map((e, i) => {
           const ws = getWarrantyStatus(e);

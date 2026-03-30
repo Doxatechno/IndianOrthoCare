@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Search, Filter, CalendarCheck } from 'lucide-react';
-import { pmSchedules as initialPM, PMSchedule, PMStatus, technicians } from '@/data/mockData';
+import { PMStatus, technicians } from '@/data/mockData';
+import { useData } from '@/context/DataContext';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import StatusBadge from '@/components/StatusBadge';
@@ -8,7 +9,7 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: PMStatus[] = ['Pending', 'Assigned', 'Completed'];
 
 export default function PMSchedules() {
-  const [data, setData] = useState<PMSchedule[]>(initialPM);
+  const { pmSchedules: data, updatePMSchedule } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
@@ -19,12 +20,20 @@ export default function PMSchedules() {
     return matchSearch && matchStatus;
   });
 
-  const assignTechnician = (pmId: string, tech: string) => {
-    setData(data.map(p => p.id === pmId ? { ...p, assignedTechnician: tech, status: 'Assigned' as PMStatus } : p));
+  const assignTechnician = async (pmId: string, tech: string) => {
+    try {
+      await updatePMSchedule(pmId, { assignedTechnician: tech, status: 'Assigned' });
+    } catch (error) {
+      console.error('Failed to assign technician:', error);
+    }
   };
 
-  const updateStatus = (pmId: string, status: PMStatus) => {
-    setData(data.map(p => p.id === pmId ? { ...p, status } : p));
+  const updateStatus = async (pmId: string, status: PMStatus) => {
+    try {
+      await updatePMSchedule(pmId, { status });
+    } catch (error) {
+      console.error('Failed to update PM status:', error);
+    }
   };
 
   return (
@@ -48,7 +57,6 @@ export default function PMSchedules() {
         </Select>
       </div>
 
-      {/* Desktop Table */}
       <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -97,7 +105,6 @@ export default function PMSchedules() {
         </div>
       </div>
 
-      {/* Mobile Card View */}
       <div className="md:hidden space-y-3">
         {filtered.map((p, i) => (
           <div key={p.id} className="glass-card p-4 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 const emptyForm = { name: '', contactPerson: '', phone: '', email: '', address: '' };
 
 export default function Customers() {
-  const { customers, setCustomers } = useData();
+  const { customers, addCustomer, updateCustomer } = useData();
   const [search, setSearch] = useState('');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -33,21 +33,20 @@ export default function Customers() {
     setDialogOpen(true);
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!form.name) return;
-    if (editingId) {
-      setCustomers(prev => prev.map(c => c.id === editingId ? { ...c, ...form } : c));
-    } else {
-      const newCustomer: Customer = {
-        id: `C${String(customers.length + 1).padStart(3, '0')}`,
-        ...form,
-        createdAt: new Date().toISOString().split('T')[0],
-      };
-      setCustomers(prev => [newCustomer, ...prev]);
+    try {
+      if (editingId) {
+        await updateCustomer(editingId, form);
+      } else {
+        await addCustomer(form);
+      }
+      setForm(emptyForm);
+      setEditingId(null);
+      setDialogOpen(false);
+    } catch (error) {
+      console.error('Failed to save customer:', error);
     }
-    setForm(emptyForm);
-    setEditingId(null);
-    setDialogOpen(false);
   };
 
   return (
@@ -96,8 +95,8 @@ export default function Customers() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((c, i) => (
-          <div 
-            key={c.id} 
+          <div
+            key={c.id}
             className="glass-card p-5 hover:-translate-y-1 transition-all duration-300 opacity-0 animate-fade-in"
             style={{ animationDelay: `${i * 60}ms` }}
           >

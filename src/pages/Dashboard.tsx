@@ -1,52 +1,10 @@
-import { 
-  ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield, 
-  Cpu, Users, ArrowUpRight, TrendingUp, Activity, Heart
+import {
+  ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
+  Cpu, Users, ArrowUpRight
 } from 'lucide-react';
-import { tickets, equipment, amcContracts, pmSchedules, customers } from '@/data/mockData';
+import { useData } from '@/context/DataContext';
 import StatusBadge from '@/components/StatusBadge';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-
-const topCards = [
-  { 
-    label: 'Installations', 
-    value: tickets.filter(t => t.status === 'Completed').length,
-    subtitle: 'Completed this month',
-    icon: CheckCircle2, 
-    gradient: 'gradient-card-1',
-    trend: '+12%'
-  },
-  { 
-    label: 'Pending', 
-    value: tickets.filter(t => t.status === 'Pending' || t.status === 'Assigned').length,
-    subtitle: 'Awaiting action',
-    icon: Clock, 
-    gradient: 'gradient-card-2',
-    trend: '-5%'
-  },
-  { 
-    label: 'Active AMCs', 
-    value: amcContracts.filter(a => a.status === 'Active').length,
-    subtitle: 'Running contracts',
-    icon: Shield, 
-    gradient: 'gradient-card-3',
-    trend: '+15%'
-  },
-  { 
-    label: 'Upcoming PMs', 
-    value: pmSchedules.filter(p => p.status === 'Pending').length,
-    subtitle: 'Next 30 days',
-    icon: CalendarCheck, 
-    gradient: 'gradient-card-4',
-    trend: '3 due'
-  },
-];
-
-const bottomStats = [
-  { label: 'In Progress', value: tickets.filter(t => t.status === 'In Progress').length, icon: ClipboardList, color: 'text-info', bg: 'bg-info/10' },
-  { label: 'Issues', value: tickets.filter(t => t.status === 'Issue Reported').length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
-  { label: 'Equipment', value: equipment.length, icon: Cpu, color: 'text-primary', bg: 'bg-primary/10' },
-  { label: 'Customers', value: customers.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10' },
-];
 
 const ticketStatusData = [
   { name: 'Jan', tickets: 12, completed: 8 },
@@ -60,28 +18,70 @@ const ticketStatusData = [
 
 const CHART_COLORS = ['hsl(250,75%,60%)', 'hsl(310,65%,58%)', 'hsl(190,80%,50%)', 'hsl(38,92%,50%)'];
 
-const amcPieData = [
-  { name: 'Active', value: amcContracts.filter(a => a.status === 'Active').length },
-  { name: 'Paid', value: amcContracts.filter(a => a.status === 'Paid').length },
-  { name: 'Quotation Sent', value: amcContracts.filter(a => a.status === 'Quotation Sent').length },
-  { name: 'Approved', value: amcContracts.filter(a => a.status === 'Approved').length },
-];
-
 export default function Dashboard() {
+  const { tickets, equipment, amcContracts, pmSchedules, customers } = useData();
+
+  const topCards = [
+    {
+      label: 'Installations',
+      value: tickets.filter(t => t.status === 'Completed').length,
+      subtitle: 'Completed this month',
+      icon: CheckCircle2,
+      gradient: 'gradient-card-1',
+      trend: '+12%'
+    },
+    {
+      label: 'Pending',
+      value: tickets.filter(t => t.status === 'Pending' || t.status === 'Assigned').length,
+      subtitle: 'Awaiting action',
+      icon: Clock,
+      gradient: 'gradient-card-2',
+      trend: '-5%'
+    },
+    {
+      label: 'Active AMCs',
+      value: amcContracts.filter(a => a.status === 'Active').length,
+      subtitle: 'Running contracts',
+      icon: Shield,
+      gradient: 'gradient-card-3',
+      trend: '+15%'
+    },
+    {
+      label: 'Upcoming PMs',
+      value: pmSchedules.filter(p => p.status === 'Pending').length,
+      subtitle: 'Next 30 days',
+      icon: CalendarCheck,
+      gradient: 'gradient-card-4',
+      trend: '3 due'
+    },
+  ];
+
+  const bottomStats = [
+    { label: 'In Progress', value: tickets.filter(t => t.status === 'In Progress').length, icon: ClipboardList, color: 'text-info', bg: 'bg-info/10' },
+    { label: 'Issues', value: tickets.filter(t => t.status === 'Issue Reported').length, icon: AlertTriangle, color: 'text-destructive', bg: 'bg-destructive/10' },
+    { label: 'Equipment', value: equipment.length, icon: Cpu, color: 'text-primary', bg: 'bg-primary/10' },
+    { label: 'Customers', value: customers.length, icon: Users, color: 'text-accent', bg: 'bg-accent/10' },
+  ];
+
+  const amcPieData = [
+    { name: 'Active', value: amcContracts.filter(a => a.status === 'Active').length },
+    { name: 'Paid', value: amcContracts.filter(a => a.status === 'Paid').length },
+    { name: 'Quotation Sent', value: amcContracts.filter(a => a.status === 'Quotation Sent').length },
+    { name: 'Approved', value: amcContracts.filter(a => a.status === 'Approved').length },
+  ];
+
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
-      {/* Top Gradient Cards */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {topCards.map((card, index) => (
-          <div 
-            key={card.label} 
+          <div
+            key={card.label}
             className={`${card.gradient} rounded-2xl p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-default opacity-0 animate-fade-in`}
             style={{ animationDelay: `${index * 100}ms` }}
           >
-            {/* Glass circle decoration */}
             <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-sm" />
             <div className="absolute -right-2 -bottom-6 w-16 h-16 bg-white/5 rounded-full" />
-            
+
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
                 <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
@@ -97,9 +97,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* Area Chart - wider */}
         <div className="lg:col-span-3 glass-card p-5 opacity-0 animate-fade-in" style={{ animationDelay: '400ms' }}>
           <div className="flex items-center justify-between mb-5">
             <div>
@@ -132,16 +130,16 @@ export default function Dashboard() {
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(230,20%,90%)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(230,10%,46%)' }} axisLine={false} tickLine={false} />
               <YAxis tick={{ fontSize: 11, fill: 'hsl(230,10%,46%)' }} axisLine={false} tickLine={false} />
-              <Tooltip 
-                contentStyle={{ 
-                  borderRadius: '14px', 
-                  border: '1px solid hsl(230,20%,90%)', 
+              <Tooltip
+                contentStyle={{
+                  borderRadius: '14px',
+                  border: '1px solid hsl(230,20%,90%)',
                   fontSize: '12px',
                   boxShadow: '0 10px 40px -10px hsl(230 30% 50% / 0.15)',
                   backdropFilter: 'blur(10px)',
                   background: 'hsl(0 0% 100% / 0.9)',
                   padding: '10px 16px'
-                }} 
+                }}
               />
               <Area type="monotone" dataKey="tickets" stroke="hsl(250,75%,60%)" strokeWidth={2.5} fill="url(#colorTickets)" dot={false} />
               <Area type="monotone" dataKey="completed" stroke="hsl(190,80%,50%)" strokeWidth={2.5} fill="url(#colorCompleted)" dot={false} />
@@ -149,20 +147,19 @@ export default function Dashboard() {
           </ResponsiveContainer>
         </div>
 
-        {/* Right column: Pie + mini stats */}
         <div className="lg:col-span-2 flex flex-col gap-4">
           <div className="glass-card p-5 flex-1 opacity-0 animate-fade-in" style={{ animationDelay: '500ms' }}>
             <h3 className="text-sm font-bold text-foreground font-display mb-1">AMC Status</h3>
             <p className="text-[11px] text-muted-foreground mb-3">Contract breakdown</p>
             <ResponsiveContainer width="100%" height={160}>
               <PieChart>
-                <Pie 
-                  data={amcPieData} 
-                  cx="50%" 
-                  cy="50%" 
+                <Pie
+                  data={amcPieData}
+                  cx="50%"
+                  cy="50%"
                   innerRadius={42}
-                  outerRadius={65} 
-                  dataKey="value" 
+                  outerRadius={65}
+                  dataKey="value"
                   strokeWidth={3}
                   stroke="hsl(0 0% 100% / 0.8)"
                   paddingAngle={3}
@@ -184,7 +181,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Bottom Stats Row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '600ms' }}>
         {bottomStats.map(stat => (
           <div key={stat.label} className="glass-card p-4 flex items-center gap-3 hover:-translate-y-0.5 transition-all duration-300">
@@ -199,9 +195,7 @@ export default function Dashboard() {
         ))}
       </div>
 
-      {/* Recent Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        {/* Recent Tickets */}
         <div className="glass-card overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: '700ms' }}>
           <div className="flex items-center justify-between p-5 pb-3">
             <div>
@@ -213,7 +207,7 @@ export default function Dashboard() {
             </a>
           </div>
           <div className="divide-y divide-border/40">
-            {tickets.slice(0, 4).map((ticket, i) => (
+            {tickets.slice(0, 4).map(ticket => (
               <div key={ticket.id} className="px-5 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
@@ -230,7 +224,6 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Upcoming PM */}
         <div className="glass-card overflow-hidden opacity-0 animate-fade-in" style={{ animationDelay: '800ms' }}>
           <div className="flex items-center justify-between p-5 pb-3">
             <div>
@@ -242,7 +235,7 @@ export default function Dashboard() {
             </a>
           </div>
           <div className="divide-y divide-border/40">
-            {pmSchedules.filter(p => p.status !== 'Completed').slice(0, 4).map((pm, i) => (
+            {pmSchedules.filter(p => p.status !== 'Completed').slice(0, 4).map(pm => (
               <div key={pm.id} className="px-5 py-3 flex items-center justify-between hover:bg-secondary/30 transition-colors">
                 <div className="flex items-center gap-3 min-w-0">
                   <div className="w-8 h-8 rounded-lg bg-accent/10 flex items-center justify-center shrink-0">
