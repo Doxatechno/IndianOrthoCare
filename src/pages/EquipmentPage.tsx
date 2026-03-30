@@ -218,6 +218,14 @@ export default function EquipmentPage() {
           );
         })}
       </div>
+
+      {qrEquipment && (
+        <EquipmentQRLabel
+          open={!!qrEquipment}
+          onOpenChange={(open) => !open && setQrEquipment(null)}
+          equipment={qrEquipment}
+        />
+      )}
     </div>
   );
 }
