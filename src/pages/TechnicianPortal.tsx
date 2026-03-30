@@ -297,7 +297,6 @@ export default function TechnicianPortal() {
             )}
           </div>
         )}
-      </div>
 
         {/* Activity Tab */}
         {activeTab === 'activity' && (
@@ -352,8 +351,6 @@ export default function TechnicianPortal() {
           </div>
         )}
       </div>
-
-      {/* Bottom Nav */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 px-6 py-3 flex items-center justify-around shadow-2xl" style={{ paddingBottom: 'max(12px, env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => setActiveTab('tickets')}
