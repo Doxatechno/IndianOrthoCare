@@ -69,7 +69,8 @@ export default function Dashboard() {
       subtitle: 'Completed this month',
       icon: CheckCircle2,
       gradient: 'gradient-card-1',
-      trend: '+12%'
+      trend: '+12%',
+      link: '/tickets'
     },
     {
       label: 'Pending',
@@ -77,7 +78,8 @@ export default function Dashboard() {
       subtitle: 'Awaiting action',
       icon: Clock,
       gradient: 'gradient-card-2',
-      trend: '-5%'
+      trend: '-5%',
+      link: '/tickets'
     },
     {
       label: 'Active AMCs',
@@ -85,7 +87,8 @@ export default function Dashboard() {
       subtitle: 'Running contracts',
       icon: Shield,
       gradient: 'gradient-card-3',
-      trend: '+15%'
+      trend: '+15%',
+      link: '/amc'
     },
     {
       label: 'Upcoming PMs',
@@ -93,7 +96,8 @@ export default function Dashboard() {
       subtitle: 'Next 30 days',
       icon: CalendarCheck,
       gradient: 'gradient-card-4',
-      trend: '3 due'
+      trend: '3 due',
+      link: '/pm-schedules'
     },
   ];
 
