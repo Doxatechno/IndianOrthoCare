@@ -18,7 +18,8 @@ interface Props {
 
 export default function EquipmentQRLabel({ open, onOpenChange, equipment }: Props) {
   const labelRef = useRef<HTMLDivElement>(null);
-  const ticketUrl = `${window.location.origin}/raise-ticket/${equipment.id}`;
+  const baseUrl = 'https://meditech-care.lovable.app';
+  const ticketUrl = `${baseUrl}/raise-ticket/${equipment.id}`;
 
   const handlePrint = () => {
     const printWindow = window.open('', '_blank');
