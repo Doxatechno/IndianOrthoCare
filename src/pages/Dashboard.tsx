@@ -46,6 +46,25 @@ export default function Dashboard() {
       .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [equipment, amcContracts]);
 
+  // CRITICAL: Warranty expiring in less than 5 days
+  const criticalWarranty = useMemo(() => {
+    return warrantyExpiringSoon.filter(e => e.daysLeft <= 5);
+  }, [warrantyExpiringSoon]);
+
+  // Tickets open for more than 3 days
+  const staleTickets = useMemo(() => {
+    const now = new Date();
+    return tickets
+      .filter(t => t.status !== 'Completed')
+      .map(t => {
+        const created = new Date(t.createdDate);
+        const daysOpen = Math.ceil((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...t, daysOpen };
+      })
+      .filter(t => t.daysOpen > 3)
+      .sort((a, b) => b.daysOpen - a.daysOpen);
+  }, [tickets]);
+
   // Equipment with already expired warranty and no AMC
   const warrantyExpired = useMemo(() => {
     const now = new Date();
