@@ -169,40 +169,6 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* STALE TICKETS ALERT */}
-      {staleTickets.length > 0 && (
-        <div className="rounded-2xl border-2 border-warning/40 bg-warning/5 p-4 animate-fade-in">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-xl bg-warning/15">
-              <Clock size={18} className="text-warning" />
-            </div>
-            <div>
-              <h3 className="text-sm font-bold text-warning font-display">🔔 Overdue Tickets</h3>
-              <p className="text-[11px] text-warning/70">These tickets have been open for more than 3 days</p>
-            </div>
-            <span className="ml-auto text-[10px] font-bold bg-warning text-warning-foreground px-2.5 py-1 rounded-full">{staleTickets.length} overdue</span>
-          </div>
-          <div className="divide-y divide-border/40 rounded-xl border border-warning/20 bg-card overflow-hidden">
-            {staleTickets.slice(0, 5).map(t => (
-              <div key={t.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-secondary/30 transition-colors">
-                <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
-                    <ClipboardList size={13} className="text-warning" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate">{t.equipmentName}</p>
-                    <p className="text-[10px] text-muted-foreground truncate">{t.customerName} · {t.id}</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3 shrink-0">
-                  <StatusBadge status={t.status} />
-                  <span className="text-[10px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded-full">{t.daysOpen}d open</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {topCards.map((card, index) => (
           <div
