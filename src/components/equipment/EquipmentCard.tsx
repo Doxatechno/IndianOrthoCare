@@ -16,7 +16,7 @@ function getWarrantyInfo(e: Equipment) {
   const now = new Date();
   const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
   if (daysLeft < 0) return { label: 'Expired', color: 'text-destructive', icon: ShieldOff, bg: 'bg-destructive/10' };
-  if (daysLeft <= 30) return { label: `${daysLeft}d left`, color: 'text-warning', icon: ShieldAlert, bg: 'bg-warning/10' };
+  if (daysLeft <= 90) return { label: `${daysLeft}d left`, color: 'text-warning', icon: ShieldAlert, bg: 'bg-warning/10' };
   return { label: 'Active', color: 'text-success', icon: Shield, bg: 'bg-success/10' };
 }
 
