@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
-  Cpu, Users, ArrowUpRight, AlertCircle
+  Cpu, Users, ArrowUpRight, AlertCircle, Siren
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import StatusBadge from '@/components/StatusBadge';
