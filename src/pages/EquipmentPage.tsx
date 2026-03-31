@@ -47,7 +47,7 @@ export default function EquipmentPage() {
     const now = new Date();
     const daysLeft = Math.ceil((end.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
     if (daysLeft < 0) return 'Expired';
-    if (daysLeft <= 30) return 'Expiring Soon';
+    if (daysLeft <= 90) return 'Expiring Soon';
     return 'Active';
   };
 
