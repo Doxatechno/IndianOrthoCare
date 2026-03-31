@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   ClipboardList, CheckCircle2, Clock, AlertTriangle, CalendarCheck, Shield,
-  Cpu, Users, ArrowUpRight, AlertCircle
+  Cpu, Users, ArrowUpRight, AlertCircle, Siren
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import StatusBadge from '@/components/StatusBadge';
@@ -45,6 +45,25 @@ export default function Dashboard() {
       .filter(e => !e.hasAMC) // Only show those without active AMC
       .sort((a, b) => a.daysLeft - b.daysLeft);
   }, [equipment, amcContracts]);
+
+  // CRITICAL: Warranty expiring in less than 5 days
+  const criticalWarranty = useMemo(() => {
+    return warrantyExpiringSoon.filter(e => e.daysLeft <= 5);
+  }, [warrantyExpiringSoon]);
+
+  // Tickets open for more than 3 days
+  const staleTickets = useMemo(() => {
+    const now = new Date();
+    return tickets
+      .filter(t => t.status !== 'Completed')
+      .map(t => {
+        const created = new Date(t.createdDate);
+        const daysOpen = Math.ceil((now.getTime() - created.getTime()) / (1000 * 60 * 60 * 24));
+        return { ...t, daysOpen };
+      })
+      .filter(t => t.daysOpen > 3)
+      .sort((a, b) => b.daysOpen - a.daysOpen);
+  }, [tickets]);
 
   // Equipment with already expired warranty and no AMC
   const warrantyExpired = useMemo(() => {
@@ -117,6 +136,73 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 max-w-[1400px] mx-auto">
+      {/* CRITICAL WARRANTY ALERT */}
+      {criticalWarranty.length > 0 && (
+        <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 animate-fade-in">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-xl bg-destructive/15 animate-pulse">
+              <Siren size={18} className="text-destructive" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-destructive font-display">⚠️ Critical Warranty Alert</h3>
+              <p className="text-[11px] text-destructive/70">These equipment warranties expire in less than 5 days — immediate action required</p>
+            </div>
+            <span className="ml-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-2.5 py-1 rounded-full">{criticalWarranty.length} critical</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+            {criticalWarranty.map(e => (
+              <div key={e.id} className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-card p-3">
+                <div className="w-8 h-8 rounded-lg bg-destructive/10 flex items-center justify-center shrink-0">
+                  <Cpu size={13} className="text-destructive" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-bold text-foreground truncate">{e.name}</p>
+                  <p className="text-[10px] text-muted-foreground truncate">{e.customerName}</p>
+                </div>
+                <div className="text-right shrink-0">
+                  <p className="text-xs font-extrabold text-destructive">{e.daysLeft}d</p>
+                  <p className="text-[9px] text-muted-foreground">{e.warrantyEndDate}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* STALE TICKETS ALERT */}
+      {staleTickets.length > 0 && (
+        <div className="rounded-2xl border-2 border-warning/40 bg-warning/5 p-4 animate-fade-in">
+          <div className="flex items-center gap-3 mb-3">
+            <div className="p-2 rounded-xl bg-warning/15">
+              <Clock size={18} className="text-warning" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-warning font-display">🔔 Overdue Tickets</h3>
+              <p className="text-[11px] text-warning/70">These tickets have been open for more than 3 days</p>
+            </div>
+            <span className="ml-auto text-[10px] font-bold bg-warning text-warning-foreground px-2.5 py-1 rounded-full">{staleTickets.length} overdue</span>
+          </div>
+          <div className="divide-y divide-border/40 rounded-xl border border-warning/20 bg-card overflow-hidden">
+            {staleTickets.slice(0, 5).map(t => (
+              <div key={t.id} className="flex items-center justify-between px-4 py-2.5 hover:bg-secondary/30 transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-8 h-8 rounded-lg bg-warning/10 flex items-center justify-center shrink-0">
+                    <ClipboardList size={13} className="text-warning" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="text-xs font-bold text-foreground truncate">{t.equipmentName}</p>
+                    <p className="text-[10px] text-muted-foreground truncate">{t.customerName} · {t.id}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3 shrink-0">
+                  <StatusBadge status={t.status} />
+                  <span className="text-[10px] font-bold text-warning bg-warning/10 px-2 py-0.5 rounded-full">{t.daysOpen}d open</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {topCards.map((card, index) => (
           <div
