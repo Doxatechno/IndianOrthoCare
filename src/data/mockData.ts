@@ -74,12 +74,15 @@ export const customers: Customer[] = [
 ];
 
 export const equipment: Equipment[] = [
-  { id: 'E001', name: 'X-Ray Machine', modelNumber: 'XR-5000', serialNumber: 'SN-XR-2024-001', customerId: 'C001', customerName: 'City General Hospital', installationDate: '2024-02-01', warrantyStartDate: '2024-02-01', warrantyEndDate: '2026-04-10' },
-  { id: 'E002', name: 'CT Scanner', modelNumber: 'CT-PRO-128', serialNumber: 'SN-CT-2024-002', customerId: 'C001', customerName: 'City General Hospital', installationDate: '2024-03-15', warrantyStartDate: '2024-03-15', warrantyEndDate: '2026-04-25' },
-  { id: 'E003', name: 'Blood Analyzer', modelNumber: 'BA-3000', serialNumber: 'SN-BA-2024-003', customerId: 'C002', customerName: 'LifeCare Diagnostics', installationDate: '2024-04-10', warrantyStartDate: '2024-04-10', warrantyEndDate: '2026-05-15' },
+  { id: 'E001', name: 'X-Ray Machine', modelNumber: 'XR-5000', serialNumber: 'SN-XR-2024-001', customerId: 'C001', customerName: 'City General Hospital', installationDate: '2024-02-01', warrantyStartDate: '2024-02-01', warrantyEndDate: '2026-04-03' },
+  { id: 'E002', name: 'CT Scanner', modelNumber: 'CT-PRO-128', serialNumber: 'SN-CT-2024-002', customerId: 'C001', customerName: 'City General Hospital', installationDate: '2024-03-15', warrantyStartDate: '2024-03-15', warrantyEndDate: '2026-04-15' },
+  { id: 'E003', name: 'Blood Analyzer', modelNumber: 'BA-3000', serialNumber: 'SN-BA-2024-003', customerId: 'C002', customerName: 'LifeCare Diagnostics', installationDate: '2024-04-10', warrantyStartDate: '2024-04-10', warrantyEndDate: '2026-04-20' },
   { id: 'E004', name: 'Ultrasound Machine', modelNumber: 'US-ELITE', serialNumber: 'SN-US-2024-004', customerId: 'C003', customerName: 'Apollo Path Lab', installationDate: null, warrantyStartDate: null, warrantyEndDate: null },
   { id: 'E005', name: 'ECG Monitor', modelNumber: 'ECG-12L', serialNumber: 'SN-ECG-2024-005', customerId: 'C004', customerName: 'MedStar Hospital', installationDate: '2024-06-01', warrantyStartDate: '2024-06-01', warrantyEndDate: '2025-12-01' },
   { id: 'E006', name: 'Ventilator', modelNumber: 'VT-ICU-PRO', serialNumber: 'SN-VT-2024-006', customerId: 'C005', customerName: 'Unity Healthcare', installationDate: '2025-01-15', warrantyStartDate: '2025-01-15', warrantyEndDate: '2026-01-15' },
+  { id: 'E007', name: 'Defibrillator', modelNumber: 'DF-AED-200', serialNumber: 'SN-DF-2024-007', customerId: 'C002', customerName: 'LifeCare Diagnostics', installationDate: '2024-08-10', warrantyStartDate: '2024-08-10', warrantyEndDate: '2026-04-10' },
+  { id: 'E008', name: 'Patient Monitor', modelNumber: 'PM-VITAL-500', serialNumber: 'SN-PM-2024-008', customerId: 'C003', customerName: 'Apollo Path Lab', installationDate: '2024-09-15', warrantyStartDate: '2024-09-15', warrantyEndDate: '2026-04-12' },
+  { id: 'E009', name: 'MRI Scanner', modelNumber: 'MRI-3T-PRO', serialNumber: 'SN-MRI-2024-009', customerId: 'C004', customerName: 'MedStar Hospital', installationDate: '2024-05-01', warrantyStartDate: '2024-05-01', warrantyEndDate: '2026-04-05' },
 ];
 
 export const tickets: InstallationTicket[] = [
