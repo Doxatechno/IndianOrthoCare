@@ -171,7 +171,7 @@ export default function AMCContracts() {
       const wEnd = warrantyMap.get(a.equipmentId);
       const daysLeft = getWarrantyDaysLeft(wEnd);
       let matchesWarranty = true;
-      if (warrantyFilter === 'all') matchesWarranty = daysLeft === null || daysLeft >= 0;
+      if (warrantyFilter === 'all') matchesWarranty = daysLeft !== null && daysLeft >= 0 && daysLeft <= 180;
       else if (warrantyFilter === 'all_including_expired') matchesWarranty = true;
       else if (warrantyFilter === 'expired') matchesWarranty = daysLeft !== null && daysLeft < 0;
       else if (warrantyFilter === 'critical') matchesWarranty = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
