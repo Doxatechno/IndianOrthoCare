@@ -39,6 +39,16 @@ export default function Technicians() {
     return matchSearch && matchRole;
   });
 
+  // Resolve reporting manager: if it's a TECH-xxx ID, show "Name (ID)"
+  const resolveManager = (manager: string) => {
+    if (!manager) return '—';
+    if (manager.startsWith('TECH-')) {
+      const found = technicians.find(t => t.id === manager);
+      return found ? `${found.name} (${found.employeeCode})` : manager;
+    }
+    return manager;
+  };
+
   // Group by role for summary
   const roleCounts = technicians.reduce((acc, t) => {
     acc[t.role] = (acc[t.role] || 0) + 1;
