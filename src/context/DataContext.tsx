@@ -124,10 +124,13 @@ const toPM = (row: any): PMSchedule => ({
 
 const toTechnician = (row: any): Technician => ({
   id: row.id,
+  employeeCode: row.id,
   name: row.name,
   phone: row.phone,
   email: row.email,
   specialization: row.specialization,
+  role: row.specialization?.includes('Head') ? 'Service Head' : row.specialization?.includes('Coordinator') ? 'Service Coordinator' : row.specialization?.includes('Sales') ? 'Sales and Service Engineer' : 'Service Engineer',
+  reportingManager: '',
   isActive: row.is_active,
   createdAt: row.created_at,
 });
