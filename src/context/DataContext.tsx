@@ -565,7 +565,53 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
 
     setPMSchedules(prev => prev.map(p => (p.id === pmId ? { ...p, ...patch } : p)));
-  }, []);
+
+    // Auto-create a ticket when a technician is assigned to a PM schedule
+    if (patch.assignedTechnician && patch.status === 'Assigned') {
+      const pm = pmSchedules.find(p => p.id === pmId);
+      if (!pm) return;
+
+      const equip = equipment.find(e => e.id === pm.equipmentId);
+      const customer = customers.find(c => c.id === equip?.customerId);
+
+      const ticketId = nextId(tickets.map(t => t.id), 'TK-');
+      const newTicket: InstallationTicket = {
+        id: ticketId,
+        equipmentId: pm.equipmentId,
+        equipmentName: pm.equipmentName,
+        customerId: equip?.customerId || '',
+        customerName: pm.customerName,
+        location: customer?.address || '',
+        status: 'Assigned',
+        assignedTechnician: patch.assignedTechnician,
+        remarks: `PM ${pm.pmNumber} - Preventive Maintenance`,
+        issueType: 'Preventive Maintenance',
+        createdDate: today(),
+        completedDate: null,
+      };
+
+      const { error: ticketError } = await sb.from('tickets').insert({
+        id: newTicket.id,
+        equipment_id: newTicket.equipmentId,
+        equipment_name: newTicket.equipmentName,
+        customer_id: newTicket.customerId,
+        customer_name: newTicket.customerName,
+        location: newTicket.location,
+        status: newTicket.status,
+        assigned_technician: newTicket.assignedTechnician,
+        remarks: newTicket.remarks,
+        issue_type: newTicket.issueType,
+        created_date: newTicket.createdDate,
+        completed_date: newTicket.completedDate,
+      });
+
+      if (ticketError) {
+        console.error('Failed to auto-create ticket for PM:', ticketError);
+      } else {
+        setTickets(prev => [newTicket, ...prev]);
+      }
+    }
+  }, [pmSchedules, equipment, customers, tickets]);
 
   const addTechnician = useCallback(async (input: TechnicianInput) => {
     const newTech: Technician = {
