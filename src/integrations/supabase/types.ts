@@ -26,6 +26,7 @@ export type Database = {
           start_date: string
           status: Database["public"]["Enums"]["amc_status"]
           updated_at: string
+          warranty_end_date: string | null
         }
         Insert: {
           customer_id?: string
@@ -38,6 +39,7 @@ export type Database = {
           start_date: string
           status?: Database["public"]["Enums"]["amc_status"]
           updated_at?: string
+          warranty_end_date?: string | null
         }
         Update: {
           customer_id?: string
@@ -50,6 +52,7 @@ export type Database = {
           start_date?: string
           status?: Database["public"]["Enums"]["amc_status"]
           updated_at?: string
+          warranty_end_date?: string | null
         }
         Relationships: [
           {
@@ -297,10 +300,9 @@ export type Database = {
     Enums: {
       amc_status:
         | "Quotation Sent"
-        | "Approved"
-        | "Payment Pending"
-        | "Paid"
-        | "Active"
+        | "PO Released"
+        | "Invoice Generated"
+        | "Payment Received"
       pm_status: "Pending" | "Assigned" | "Completed"
       ticket_status:
         | "Pending"
@@ -437,10 +439,9 @@ export const Constants = {
     Enums: {
       amc_status: [
         "Quotation Sent",
-        "Approved",
-        "Payment Pending",
-        "Paid",
-        "Active",
+        "PO Released",
+        "Invoice Generated",
+        "Payment Received",
       ],
       pm_status: ["Pending", "Assigned", "Completed"],
       ticket_status: [
