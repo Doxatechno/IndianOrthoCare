@@ -561,15 +561,21 @@ export default function AMCContracts() {
                   </td>
                   <td className="px-5 py-3.5"><StatusBadge status={a.status} /></td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] rounded-lg gap-1"
-                        onClick={() => openQuotation(a.id)}
-                      >
-                        <FileText size={12} /> Quotation
-                      </Button>
+                    <div className="flex items-center gap-1.5">
+                      {a.price > 0 ? (
+                        <>
+                          <Button variant="outline" size="sm" className="h-7 text-[11px] rounded-lg gap-1 border-success/40 text-success hover:bg-success/10" onClick={() => downloadQuotationPDF(a.id)}>
+                            <Download size={12} /> Download
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg" onClick={() => openQuotation(a.id, true)} title="Edit Quotation">
+                            <Pencil size={12} className="text-muted-foreground" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-7 text-[11px] rounded-lg gap-1" onClick={() => openQuotation(a.id)}>
+                          <FileText size={12} /> Create Quotation
+                        </Button>
+                      )}
                       <Select value="" onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
                         <SelectTrigger className="h-7 text-[11px] w-36 rounded-lg"><SelectValue placeholder="Change Status" /></SelectTrigger>
                         <SelectContent>
@@ -615,9 +621,20 @@ export default function AMCContracts() {
               <WarrantyCountdown warrantyEndDate={warrantyMap.get(a.equipmentId)} />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1" onClick={() => openQuotation(a.id)}>
-                <FileText size={12} /> Quotation
-              </Button>
+              {a.price > 0 ? (
+                <>
+                  <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1 border-success/40 text-success" onClick={() => downloadQuotationPDF(a.id)}>
+                    <Download size={12} /> Download
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl" onClick={() => openQuotation(a.id, true)}>
+                    <Pencil size={12} />
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1" onClick={() => openQuotation(a.id)}>
+                  <FileText size={12} /> Create Quotation
+                </Button>
+              )}
               <Select value="" onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
                 <SelectTrigger className="flex-1 h-9 text-xs rounded-xl"><SelectValue placeholder="Change Status" /></SelectTrigger>
                 <SelectContent>
