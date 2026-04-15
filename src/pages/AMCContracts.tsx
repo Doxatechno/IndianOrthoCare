@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3 } from 'lucide-react';
+import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3, Download, Pencil } from 'lucide-react';
+import jsPDF from 'jspdf';
 import { AMCStatus } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
@@ -227,10 +228,113 @@ export default function AMCContracts() {
   };
 
   // Quotation generation
-  const openQuotation = (amcId: string) => {
+  const openQuotation = (amcId: string, editMode = false) => {
+    const amc = data.find(a => a.id === amcId);
     setQuotationAmcId(amcId);
-    setQuotationPrice('');
+    setQuotationPrice(editMode && amc?.price ? String(amc.price) : '');
     setQuotationDialogOpen(true);
+  };
+
+  const generateQuotationPDF = (amc: typeof data[0], price: number) => {
+    const doc = new jsPDF();
+    const customer = customers.find(c => c.id === amc.customerId);
+
+    // Header
+    doc.setFontSize(20);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AMC QUOTATION', 105, 25, { align: 'center' });
+
+    doc.setDrawColor(59, 130, 246);
+    doc.setLineWidth(0.5);
+    doc.line(20, 32, 190, 32);
+
+    // Quotation details
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Quotation Ref: ${amc.id}`, 20, 42);
+    doc.text(`Date: ${new Date().toLocaleDateString('en-IN')}`, 150, 42);
+
+    // Customer info
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Customer Details', 20, 58);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Name: ${amc.customerName}`, 20, 66);
+    doc.text(`Contact: ${customer?.contactPerson || '-'}`, 20, 73);
+    doc.text(`Phone: ${customer?.phone || '-'}`, 20, 80);
+    doc.text(`Email: ${customer?.email || '-'}`, 20, 87);
+    doc.text(`Address: ${customer?.address || '-'}`, 20, 94);
+
+    // Equipment info
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Equipment Details', 20, 112);
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Equipment: ${amc.equipmentName}`, 20, 120);
+    doc.text(`Equipment ID: ${amc.equipmentId}`, 20, 127);
+
+    // AMC details table
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('AMC Contract Details', 20, 145);
+
+    // Table header
+    doc.setFillColor(240, 240, 240);
+    doc.rect(20, 150, 170, 10, 'F');
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Description', 25, 157);
+    doc.text('Details', 120, 157);
+
+    // Table rows
+    doc.setFont('helvetica', 'normal');
+    const rows = [
+      ['AMC ID', amc.id],
+      ['Start Date', amc.startDate],
+      ['End Date', amc.endDate],
+      ['AMC Amount', `Rs. ${price.toLocaleString('en-IN')}`],
+    ];
+    let y = 165;
+    rows.forEach(([label, value]) => {
+      doc.text(label, 25, y);
+      doc.text(value, 120, y);
+      doc.line(20, y + 3, 190, y + 3);
+      y += 10;
+    });
+
+    // Terms
+    doc.setFontSize(12);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Terms & Conditions', 20, y + 15);
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'normal');
+    const terms = [
+      '1. This quotation is valid for 30 days from the date of issue.',
+      '2. AMC covers preventive maintenance as per schedule.',
+      '3. Consumables and spare parts are not included unless specified.',
+      '4. Payment terms: As per agreement.',
+    ];
+    let ty = y + 23;
+    terms.forEach(t => { doc.text(t, 20, ty); ty += 7; });
+
+    // Footer
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Service Team', 20, 270);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(8);
+    doc.text('This is a system generated quotation.', 105, 285, { align: 'center' });
+
+    return doc;
+  };
+
+  const downloadQuotationPDF = (amcId: string) => {
+    const amc = data.find(a => a.id === amcId);
+    if (!amc || amc.price <= 0) return;
+    const doc = generateQuotationPDF(amc, amc.price);
+    doc.save(`Quotation_${amc.id}_${amc.customerName.replace(/\s+/g, '_')}.pdf`);
   };
 
   const generateQuotation = async () => {
@@ -239,31 +343,22 @@ export default function AMCContracts() {
     if (!amc) return;
 
     const price = Number(quotationPrice);
-    // Update price in DB
     const sb = supabase as any;
     await sb.from('amc_contracts').update({ price }).eq('id', quotationAmcId);
-    // Update status to Quotation Sent
     await updateAMCStatus(quotationAmcId, 'Quotation Sent');
 
-    // Find customer email
+    // Generate & download PDF
+    const doc = generateQuotationPDF(amc, price);
+    doc.save(`Quotation_${amc.id}_${amc.customerName.replace(/\s+/g, '_')}.pdf`);
+
+    // Open mailto
     const customer = customers.find(c => c.id === amc.customerId);
     const customerEmail = customer?.email || '';
-    const customerName = amc.customerName;
-
-    // Build mailto link
     const subject = encodeURIComponent(`AMC Quotation for ${amc.equipmentName} - ${amc.id}`);
     const body = encodeURIComponent(
-      `Dear ${customerName},\n\n` +
-      `Please find below the AMC quotation details:\n\n` +
-      `Equipment: ${amc.equipmentName}\n` +
-      `AMC ID: ${amc.id}\n` +
-      `AMC Period: ${amc.startDate} to ${amc.endDate}\n` +
-      `Quotation Amount: ₹${price.toLocaleString()}\n\n` +
-      `Please review and confirm to proceed with the PO.\n\n` +
-      `Best Regards,\nService Team`
+      `Dear ${amc.customerName},\n\nPlease find attached the AMC quotation.\n\nEquipment: ${amc.equipmentName}\nAMC ID: ${amc.id}\nAMC Period: ${amc.startDate} to ${amc.endDate}\nQuotation Amount: Rs. ${price.toLocaleString('en-IN')}\n\nPlease review and confirm to proceed.\n\nBest Regards,\nService Team`
     );
-    const mailtoLink = `mailto:${customerEmail}?subject=${subject}&body=${body}`;
-    window.open(mailtoLink, '_blank');
+    window.open(`mailto:${customerEmail}?subject=${subject}&body=${body}`, '_blank');
 
     setQuotationDialogOpen(false);
     setQuotationAmcId(null);
@@ -466,15 +561,21 @@ export default function AMCContracts() {
                   </td>
                   <td className="px-5 py-3.5"><StatusBadge status={a.status} /></td>
                   <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-7 text-[11px] rounded-lg gap-1"
-                        onClick={() => openQuotation(a.id)}
-                      >
-                        <FileText size={12} /> Quotation
-                      </Button>
+                    <div className="flex items-center gap-1.5">
+                      {a.price > 0 ? (
+                        <>
+                          <Button variant="outline" size="sm" className="h-7 text-[11px] rounded-lg gap-1 border-success/40 text-success hover:bg-success/10" onClick={() => downloadQuotationPDF(a.id)}>
+                            <Download size={12} /> Download
+                          </Button>
+                          <Button variant="ghost" size="sm" className="h-7 w-7 p-0 rounded-lg" onClick={() => openQuotation(a.id, true)} title="Edit Quotation">
+                            <Pencil size={12} className="text-muted-foreground" />
+                          </Button>
+                        </>
+                      ) : (
+                        <Button variant="outline" size="sm" className="h-7 text-[11px] rounded-lg gap-1" onClick={() => openQuotation(a.id)}>
+                          <FileText size={12} /> Create Quotation
+                        </Button>
+                      )}
                       <Select value="" onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
                         <SelectTrigger className="h-7 text-[11px] w-36 rounded-lg"><SelectValue placeholder="Change Status" /></SelectTrigger>
                         <SelectContent>
@@ -520,9 +621,20 @@ export default function AMCContracts() {
               <WarrantyCountdown warrantyEndDate={warrantyMap.get(a.equipmentId)} />
             </div>
             <div className="flex gap-2">
-              <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1" onClick={() => openQuotation(a.id)}>
-                <FileText size={12} /> Quotation
-              </Button>
+              {a.price > 0 ? (
+                <>
+                  <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1 border-success/40 text-success" onClick={() => downloadQuotationPDF(a.id)}>
+                    <Download size={12} /> Download
+                  </Button>
+                  <Button variant="ghost" size="sm" className="h-9 w-9 p-0 rounded-xl" onClick={() => openQuotation(a.id, true)}>
+                    <Pencil size={12} />
+                  </Button>
+                </>
+              ) : (
+                <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1" onClick={() => openQuotation(a.id)}>
+                  <FileText size={12} /> Create Quotation
+                </Button>
+              )}
               <Select value="" onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
                 <SelectTrigger className="flex-1 h-9 text-xs rounded-xl"><SelectValue placeholder="Change Status" /></SelectTrigger>
                 <SelectContent>
