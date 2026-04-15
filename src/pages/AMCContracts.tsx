@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Search, Plus, IndianRupee, Shield, Clock, AlertTriangle } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Search, Plus, IndianRupee, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3 } from 'lucide-react';
 import { AMCStatus } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Card, CardContent } from '@/components/ui/card';
 import StatusBadge from '@/components/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -52,22 +53,27 @@ function WarrantyCountdown({ warrantyEndDate }: { warrantyEndDate: string | null
 }
 
 export default function AMCContracts() {
-  const { amcContracts: data, equipment, addAMCContract, updateAMCStatus } = useData();
+  const { amcContracts: data, equipment, customers, addAMCContract, updateAMCStatus } = useData();
   const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [warrantyFilter, setWarrantyFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ equipmentId: '', startDate: '', endDate: '', price: '' });
   const [autoCreating, setAutoCreating] = useState(false);
 
+  // Quotation dialog
+  const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
+  const [quotationAmcId, setQuotationAmcId] = useState<string | null>(null);
+  const [quotationPrice, setQuotationPrice] = useState('');
+
   // Auto-create AMC contracts for equipment with warranties expiring within 180 days
   const autoCreateAMCForExpiringEquipment = useCallback(async () => {
     if (autoCreating) return;
-    const now = new Date();
     const expiringEquipment = equipment.filter(e => {
       if (!e.warrantyEndDate) return false;
       const daysLeft = getWarrantyDaysLeft(e.warrantyEndDate);
       if (daysLeft === null || daysLeft < 0) return false;
       if (daysLeft > 180) return false;
-      // Check if AMC already exists for this equipment
       const hasAMC = data.some(a => a.equipmentId === e.id);
       return !hasAMC;
     });
@@ -89,15 +95,10 @@ export default function AMCContracts() {
           endDate: amcEnd.toISOString().split('T')[0],
           price: 0,
         });
-        // Also update warranty_end_date on the amc_contracts row
         const sb = supabase as any;
-        const latestAmc = data.find(a => a.equipmentId === eq.id);
-        if (!latestAmc) {
-          // The newly added one will be the latest
-          const { data: rows } = await sb.from('amc_contracts').select('id').eq('equipment_id', eq.id).order('id', { ascending: false }).limit(1);
-          if (rows && rows.length > 0) {
-            await sb.from('amc_contracts').update({ warranty_end_date: eq.warrantyEndDate }).eq('id', rows[0].id);
-          }
+        const { data: rows } = await sb.from('amc_contracts').select('id').eq('equipment_id', eq.id).order('id', { ascending: false }).limit(1);
+        if (rows && rows.length > 0) {
+          await sb.from('amc_contracts').update({ warranty_end_date: eq.warrantyEndDate }).eq('id', rows[0].id);
         }
       } catch (err) {
         console.error('Auto-create AMC failed for', eq.id, err);
@@ -110,15 +111,39 @@ export default function AMCContracts() {
     if (equipment.length > 0 && data.length >= 0) {
       autoCreateAMCForExpiringEquipment();
     }
-  }, [equipment.length]); // Only run when equipment loads
+  }, [equipment.length]);
 
-  // Build warranty end date map from equipment
-  const warrantyMap = new Map(equipment.map(e => [e.id, e.warrantyEndDate]));
+  const warrantyMap = useMemo(() => new Map(equipment.map(e => [e.id, e.warrantyEndDate])), [equipment]);
 
-  const filtered = data.filter(a =>
-    a.equipmentName.toLowerCase().includes(search.toLowerCase()) ||
-    a.customerName.toLowerCase().includes(search.toLowerCase())
-  );
+  // Filtered data
+  const filtered = useMemo(() => {
+    return data.filter(a => {
+      const matchesSearch =
+        a.equipmentName.toLowerCase().includes(search.toLowerCase()) ||
+        a.customerName.toLowerCase().includes(search.toLowerCase()) ||
+        a.id.toLowerCase().includes(search.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || a.status === statusFilter;
+      const wEnd = warrantyMap.get(a.equipmentId);
+      const daysLeft = getWarrantyDaysLeft(wEnd);
+      let matchesWarranty = true;
+      if (warrantyFilter === 'expired') matchesWarranty = daysLeft !== null && daysLeft < 0;
+      else if (warrantyFilter === 'critical') matchesWarranty = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
+      else if (warrantyFilter === 'expiring') matchesWarranty = daysLeft !== null && daysLeft > 30 && daysLeft <= 180;
+      else if (warrantyFilter === 'active') matchesWarranty = daysLeft !== null && daysLeft > 180;
+      return matchesSearch && matchesStatus && matchesWarranty;
+    });
+  }, [data, search, statusFilter, warrantyFilter, warrantyMap]);
+
+  // Dashboard stats
+  const stats = useMemo(() => {
+    const total = data.length;
+    const byStatus = allStatuses.map(s => ({ status: s, count: data.filter(a => a.status === s).length }));
+    const expired = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d < 0; }).length;
+    const critical = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d >= 0 && d <= 30; }).length;
+    const expiringSoon = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d > 30 && d <= 180; }).length;
+    const totalValue = data.reduce((sum, a) => sum + a.price, 0);
+    return { total, byStatus, expired, critical, expiringSoon, totalValue };
+  }, [data, warrantyMap]);
 
   const handleAdd = async () => {
     if (!form.equipmentId) return;
@@ -129,7 +154,6 @@ export default function AMCContracts() {
         endDate: form.endDate,
         price: Number(form.price) || 0,
       });
-      // Update warranty_end_date
       const eq = equipment.find(e => e.id === form.equipmentId);
       if (eq?.warrantyEndDate) {
         const sb = supabase as any;
@@ -152,6 +176,52 @@ export default function AMCContracts() {
       console.error('Failed to update AMC status:', error);
     }
   };
+
+  // Quotation generation
+  const openQuotation = (amcId: string) => {
+    setQuotationAmcId(amcId);
+    setQuotationPrice('');
+    setQuotationDialogOpen(true);
+  };
+
+  const generateQuotation = async () => {
+    if (!quotationAmcId || !quotationPrice) return;
+    const amc = data.find(a => a.id === quotationAmcId);
+    if (!amc) return;
+
+    const price = Number(quotationPrice);
+    // Update price in DB
+    const sb = supabase as any;
+    await sb.from('amc_contracts').update({ price }).eq('id', quotationAmcId);
+    // Update status to Quotation Sent
+    await updateAMCStatus(quotationAmcId, 'Quotation Sent');
+
+    // Find customer email
+    const customer = customers.find(c => c.id === amc.customerId);
+    const customerEmail = customer?.email || '';
+    const customerName = amc.customerName;
+
+    // Build mailto link
+    const subject = encodeURIComponent(`AMC Quotation for ${amc.equipmentName} - ${amc.id}`);
+    const body = encodeURIComponent(
+      `Dear ${customerName},\n\n` +
+      `Please find below the AMC quotation details:\n\n` +
+      `Equipment: ${amc.equipmentName}\n` +
+      `AMC ID: ${amc.id}\n` +
+      `AMC Period: ${amc.startDate} to ${amc.endDate}\n` +
+      `Quotation Amount: ₹${price.toLocaleString()}\n\n` +
+      `Please review and confirm to proceed with the PO.\n\n` +
+      `Best Regards,\nService Team`
+    );
+    const mailtoLink = `mailto:${customerEmail}?subject=${subject}&body=${body}`;
+    window.open(mailtoLink, '_blank');
+
+    setQuotationDialogOpen(false);
+    setQuotationAmcId(null);
+    setQuotationPrice('');
+  };
+
+  const quotationAmc = data.find(a => a.id === quotationAmcId);
 
   return (
     <div className="space-y-5 animate-fade-in">
@@ -196,11 +266,123 @@ export default function AMCContracts() {
         </Dialog>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search AMC contracts..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Mini Dashboard */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        <Card className="glass-card border-0">
+          <CardContent className="p-3 text-center">
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <BarChart3 size={14} className="text-primary" />
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase">Total</span>
+            </div>
+            <p className="text-2xl font-bold text-foreground">{stats.total}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-0">
+          <CardContent className="p-3 text-center">
+            <span className="text-[11px] font-semibold text-muted-foreground uppercase">Value</span>
+            <p className="text-lg font-bold text-foreground flex items-center justify-center gap-0.5"><IndianRupee size={14} />{stats.totalValue.toLocaleString()}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-destructive/30 transition-all" onClick={() => setWarrantyFilter(warrantyFilter === 'expired' ? 'all' : 'expired')}>
+          <CardContent className="p-3 text-center">
+            <span className="text-[11px] font-semibold text-destructive uppercase">Expired</span>
+            <p className="text-2xl font-bold text-destructive">{stats.expired}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-destructive/30 transition-all" onClick={() => setWarrantyFilter(warrantyFilter === 'critical' ? 'all' : 'critical')}>
+          <CardContent className="p-3 text-center">
+            <span className="text-[11px] font-semibold text-destructive uppercase">≤30 Days</span>
+            <p className="text-2xl font-bold text-destructive">{stats.critical}</p>
+          </CardContent>
+        </Card>
+        <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-warning/30 transition-all" onClick={() => setWarrantyFilter(warrantyFilter === 'expiring' ? 'all' : 'expiring')}>
+          <CardContent className="p-3 text-center">
+            <span className="text-[11px] font-semibold text-warning uppercase">≤180 Days</span>
+            <p className="text-2xl font-bold text-warning">{stats.expiringSoon}</p>
+          </CardContent>
+        </Card>
+        {stats.byStatus.map(s => (
+          <Card key={s.status} className="glass-card border-0 cursor-pointer hover:ring-2 ring-primary/30 transition-all" onClick={() => setStatusFilter(statusFilter === s.status ? 'all' : s.status)}>
+            <CardContent className="p-3 text-center">
+              <span className="text-[11px] font-semibold text-muted-foreground uppercase truncate block">{s.status}</span>
+              <p className="text-2xl font-bold text-foreground">{s.count}</p>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
+      {/* Filters Row */}
+      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search AMC contracts..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <div className="flex gap-2 items-center flex-wrap">
+          <Filter size={14} className="text-muted-foreground" />
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger className="h-9 text-xs w-44 rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Statuses</SelectItem>
+              {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Select value={warrantyFilter} onValueChange={setWarrantyFilter}>
+            <SelectTrigger className="h-9 text-xs w-44 rounded-xl"><SelectValue placeholder="Warranty" /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Warranty</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="critical">Critical (≤30d)</SelectItem>
+              <SelectItem value="expiring">Expiring (≤180d)</SelectItem>
+              <SelectItem value="active">Active (&gt;180d)</SelectItem>
+            </SelectContent>
+          </Select>
+          {(statusFilter !== 'all' || warrantyFilter !== 'all' || search) && (
+            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => { setStatusFilter('all'); setWarrantyFilter('all'); setSearch(''); }}>
+              Clear
+            </Button>
+          )}
+        </div>
+      </div>
+
+      <p className="text-xs text-muted-foreground">{filtered.length} of {data.length} contracts</p>
+
+      {/* Quotation Dialog */}
+      <Dialog open={quotationDialogOpen} onOpenChange={setQuotationDialogOpen}>
+        <DialogContent className="sm:max-w-md rounded-2xl">
+          <DialogHeader><DialogTitle className="font-display flex items-center gap-2"><FileText size={18} /> Generate Quotation</DialogTitle></DialogHeader>
+          {quotationAmc && (
+            <div className="space-y-3 pt-2">
+              <div className="glass-card p-3 rounded-xl space-y-1 text-sm">
+                <p><span className="text-muted-foreground">Equipment:</span> <span className="font-semibold">{quotationAmc.equipmentName}</span></p>
+                <p><span className="text-muted-foreground">Customer:</span> <span className="font-semibold">{quotationAmc.customerName}</span></p>
+                <p><span className="text-muted-foreground">AMC Period:</span> {quotationAmc.startDate} → {quotationAmc.endDate}</p>
+                <p><span className="text-muted-foreground">Warranty:</span> <WarrantyCountdown warrantyEndDate={warrantyMap.get(quotationAmc.equipmentId)} /></p>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Quotation Price (₹)</Label>
+                <Input
+                  type="number"
+                  className="mt-1.5 rounded-xl"
+                  placeholder="Enter quotation amount"
+                  value={quotationPrice}
+                  onChange={e => setQuotationPrice(e.target.value)}
+                  autoFocus
+                />
+              </div>
+              <Button
+                onClick={generateQuotation}
+                disabled={!quotationPrice || Number(quotationPrice) <= 0}
+                className="w-full rounded-xl h-11 font-semibold gap-2"
+              >
+                <Mail size={16} /> Generate & Send via Email
+              </Button>
+              <p className="text-[11px] text-muted-foreground text-center">This will open your default email client with the quotation details pre-filled</p>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Desktop Table */}
       <div className="hidden md:block glass-card overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
@@ -212,7 +394,7 @@ export default function AMCContracts() {
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Price</th>
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Warranty Left</th>
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
-                <th className="px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Action</th>
+                <th className="px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
@@ -225,27 +407,45 @@ export default function AMCContracts() {
                   <td className="px-5 py-3.5 text-muted-foreground">{a.customerName}</td>
                   <td className="px-5 py-3.5 text-[12px] text-muted-foreground hidden lg:table-cell">{a.startDate} → {a.endDate}</td>
                   <td className="px-5 py-3.5 font-semibold text-foreground">
-                    <span className="flex items-center gap-0.5"><IndianRupee size={12} />{a.price.toLocaleString()}</span>
+                    {a.price > 0 ? (
+                      <span className="flex items-center gap-0.5"><IndianRupee size={12} />{a.price.toLocaleString()}</span>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">—</span>
+                    )}
                   </td>
                   <td className="px-5 py-3.5">
                     <WarrantyCountdown warrantyEndDate={warrantyMap.get(a.equipmentId)} />
                   </td>
                   <td className="px-5 py-3.5"><StatusBadge status={a.status} /></td>
                   <td className="px-5 py-3.5">
-                    <Select value={a.status} onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
-                      <SelectTrigger className="h-8 text-xs w-40 rounded-lg"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-                      </SelectContent>
-                    </Select>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-7 text-[11px] rounded-lg gap-1"
+                        onClick={() => openQuotation(a.id)}
+                      >
+                        <FileText size={12} /> Quotation
+                      </Button>
+                      <Select value="" onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
+                        <SelectTrigger className="h-7 text-[11px] w-36 rounded-lg"><SelectValue placeholder="Change Status" /></SelectTrigger>
+                        <SelectContent>
+                          {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </td>
                 </tr>
               ))}
+              {filtered.length === 0 && (
+                <tr><td colSpan={7} className="text-center py-10 text-muted-foreground text-sm">No AMC contracts found</td></tr>
+              )}
             </tbody>
           </table>
         </div>
       </div>
 
+      {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
         {filtered.map((a, i) => (
           <div key={a.id} className="glass-card p-4 animate-fade-in" style={{ animationDelay: `${i * 50}ms` }}>
@@ -262,21 +462,31 @@ export default function AMCContracts() {
               <StatusBadge status={a.status} />
             </div>
             <div className="flex items-center justify-between text-[12px] mb-2">
-              <span className="font-semibold text-foreground flex items-center gap-0.5"><IndianRupee size={11} />{a.price.toLocaleString()}</span>
+              <span className="font-semibold text-foreground flex items-center gap-0.5">
+                {a.price > 0 ? <><IndianRupee size={11} />{a.price.toLocaleString()}</> : <span className="text-muted-foreground">No price set</span>}
+              </span>
               <span className="text-muted-foreground">{a.startDate} → {a.endDate}</span>
             </div>
             <div className="flex items-center justify-between mb-3">
               <span className="text-[11px] text-muted-foreground">Warranty:</span>
               <WarrantyCountdown warrantyEndDate={warrantyMap.get(a.equipmentId)} />
             </div>
-            <Select value={a.status} onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
-              <SelectTrigger className="h-9 text-xs rounded-xl w-full"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            <div className="flex gap-2">
+              <Button variant="outline" size="sm" className="flex-1 h-9 text-xs rounded-xl gap-1" onClick={() => openQuotation(a.id)}>
+                <FileText size={12} /> Quotation
+              </Button>
+              <Select value="" onValueChange={v => updateStatus(a.id, v as AMCStatus)}>
+                <SelectTrigger className="flex-1 h-9 text-xs rounded-xl"><SelectValue placeholder="Change Status" /></SelectTrigger>
+                <SelectContent>
+                  {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         ))}
+        {filtered.length === 0 && (
+          <p className="text-center py-10 text-muted-foreground text-sm">No AMC contracts found</p>
+        )}
       </div>
     </div>
   );
