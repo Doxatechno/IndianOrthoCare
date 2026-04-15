@@ -141,7 +141,7 @@ const rawEquipment: Omit<Equipment, 'warrantyEndDate'>[] = [
 // Auto-compute warranty end date = 1 year from installation
 export const equipment: Equipment[] = rawEquipment.map(e => ({
   ...e,
-  warrantyEndDate: e.installationDate ? addYears(e.installationDate, 1) : null,
+  warrantyEndDate: e.installationDate ? addYears(e.installationDate, 5) : null,
 }));
 
 // AMC kicks in after warranty expires (year 2 onwards) — sample contracts for key equipment
