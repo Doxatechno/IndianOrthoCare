@@ -570,10 +570,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addTechnician = useCallback(async (input: TechnicianInput) => {
     const newTech: Technician = {
       id: nextId(technicians.map(t => t.id), 'TECH-'),
+      employeeCode: '',
       name: input.name,
       phone: input.phone,
       email: input.email,
       specialization: input.specialization,
+      role: 'Service Engineer',
+      reportingManager: '',
       isActive: true,
       createdAt: today(),
     };
