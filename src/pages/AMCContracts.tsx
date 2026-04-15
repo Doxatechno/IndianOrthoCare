@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Plus, IndianRupee, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3 } from 'lucide-react';
+import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3 } from 'lucide-react';
 import { AMCStatus } from '@/data/mockData';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
