@@ -1,41 +1,26 @@
 
 
-## Plan: Fix AMC Auto-Creation Duplicate ID Bug
+## Plan: Filter Out Expired Equipment from AMC Page
 
 ### Problem
-The `addAMCContract` function calculates the next AMC ID from the in-memory state array. When auto-creating multiple AMCs in a rapid loop, React state doesn't update between iterations, so every insert attempts the same ID (e.g., `AMC-012` repeatedly), causing primary key constraint violations. Only the first insert per page load succeeds.
+The AMC page shows **all** AMC contracts from the database, including 6 old records (AMC-001 through AMC-008) whose warranties expired years ago. The AMC page should only show equipment with warranties that are **expiring soon** (within 180 days) or still active — not already expired.
 
 ### Solution
 
-**File: `src/pages/AMCContracts.tsx`** — Rewrite `autoCreateAMCForExpiringEquipment` to:
+**File: `src/pages/AMCContracts.tsx`**
 
-1. Query the current max AMC ID directly from Supabase (`SELECT id FROM amc_contracts ORDER BY id DESC LIMIT 1`)
-2. Also query all existing `equipment_id` values from `amc_contracts` to check duplicates server-side (not from stale React state)
-3. Build all new AMC rows with incrementing IDs in-memory, then batch insert them in a single `.insert()` call
-4. After successful insert, reload the data (or append to state)
+Filter the displayed AMC data to exclude contracts where the warranty has already expired, unless they have progressed in the workflow (to preserve completed AMC history if needed). Two options:
 
-This eliminates the race condition entirely — one query, one batch insert, unique IDs guaranteed.
+**Option A (Recommended)**: Add a default filter that hides expired-warranty AMCs but keeps them accessible via a filter toggle. The warranty filter dropdown already exists — just default to hiding expired entries from the main view while keeping "Expired" as a viewable filter option.
 
-**File: `src/context/DataContext.tsx`** — No changes needed if we handle the batch insert directly in the AMC page. Alternatively, add a `batchAddAMCContracts` method.
+**Option B**: Hard-filter out any AMC where `warranty_end_date < today` from the display entirely.
 
-### Technical Details
+### Implementation (Option A)
 
-```text
-Current flow (broken):
-  for each equipment:
-    nextId(stale state) → same ID every time → insert → 409 conflict
+1. In the `filtered` memo that computes displayed contracts, add logic so that when `warrantyFilter === 'all'`, contracts with `daysLeft < 0` (expired warranty) are excluded
+2. Add an explicit "Expired" option in the warranty filter dropdown so coordinators can still view old records when needed
+3. Update the dashboard stat cards to reflect only non-expired contracts by default
 
-Fixed flow:
-  1. SELECT max(id) FROM amc_contracts          → e.g. "AMC-014"
-  2. SELECT equipment_id FROM amc_contracts      → set of covered equipment
-  3. Filter expiring equipment not in that set
-  4. Assign AMC-015, AMC-016, AMC-017... incrementally
-  5. Single batch INSERT of all rows
-  6. Update React state with all new rows
-```
-
-### Steps
-1. Rewrite `autoCreateAMCForExpiringEquipment` in `AMCContracts.tsx` with the batch approach described above
-2. Remove the per-item `addAMCContract` call and replace with direct Supabase batch insert
-3. Update local state after successful batch insert
+### Changes
+- **`src/pages/AMCContracts.tsx`** — Update the filtering logic in the `useMemo` that computes `filtered` to exclude expired-warranty AMCs unless the user explicitly selects "Expired" in the warranty filter
 
