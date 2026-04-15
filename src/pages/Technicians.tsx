@@ -1,16 +1,26 @@
 import { useState } from 'react';
-import { Search, Plus, Wrench, Phone, Mail, UserCheck, UserX, KeyRound } from 'lucide-react';
+import { Search, Plus, Wrench, Phone, Mail, UserCheck, UserX, KeyRound, Crown, Headset, Briefcase } from 'lucide-react';
 import { useData } from '@/context/DataContext';
+import { TechnicianRole } from '@/data/mockData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+
+const ROLE_CONFIG: Record<TechnicianRole, { icon: typeof Crown; color: string; bg: string }> = {
+  'Service Head': { icon: Crown, color: 'text-amber-600', bg: 'bg-amber-500/10' },
+  'Service Coordinator': { icon: Headset, color: 'text-blue-600', bg: 'bg-blue-500/10' },
+  'Service Engineer': { icon: Wrench, color: 'text-primary', bg: 'bg-primary/10' },
+  'Sales and Service Engineer': { icon: Briefcase, color: 'text-emerald-600', bg: 'bg-emerald-500/10' },
+};
 
 export default function Technicians() {
   const { technicians, addTechnician, updateTechnician } = useData();
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [credDialogOpen, setCredDialogOpen] = useState(false);
@@ -19,11 +29,21 @@ export default function Technicians() {
   const [credForm, setCredForm] = useState({ techId: '', techName: '', email: '', password: '' });
   const [credLoading, setCredLoading] = useState(false);
 
-  const filtered = technicians.filter(t =>
-    t.name.toLowerCase().includes(search.toLowerCase()) ||
-    t.specialization.toLowerCase().includes(search.toLowerCase()) ||
-    t.email.toLowerCase().includes(search.toLowerCase())
-  );
+  const filtered = technicians.filter(t => {
+    const matchSearch = !search ||
+      t.name.toLowerCase().includes(search.toLowerCase()) ||
+      t.specialization.toLowerCase().includes(search.toLowerCase()) ||
+      t.email.toLowerCase().includes(search.toLowerCase()) ||
+      t.employeeCode.toLowerCase().includes(search.toLowerCase());
+    const matchRole = roleFilter === 'all' || t.role === roleFilter;
+    return matchSearch && matchRole;
+  });
+
+  // Group by role for summary
+  const roleCounts = technicians.reduce((acc, t) => {
+    acc[t.role] = (acc[t.role] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
 
   const handleAdd = async () => {
     if (!form.name) return;
@@ -94,17 +114,17 @@ export default function Technicians() {
     <div className="space-y-5 animate-fade-in">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="page-header font-display">Technicians</h1>
-          <p className="page-subheader">Manage your service technicians</p>
+          <h1 className="page-header font-display">Service Team</h1>
+          <p className="page-subheader">Manage service engineers, coordinators & leadership</p>
         </div>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95">
-              <Plus size={16} /> Add Technician
+              <Plus size={16} /> Add Member
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-md rounded-2xl">
-            <DialogHeader><DialogTitle className="font-display">New Technician</DialogTitle></DialogHeader>
+            <DialogHeader><DialogTitle className="font-display">New Team Member</DialogTitle></DialogHeader>
             <div className="space-y-3 pt-2">
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground">Name</Label>
@@ -120,18 +140,58 @@ export default function Technicians() {
               </div>
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground">Specialization</Label>
-                <Input className="mt-1.5 rounded-xl" placeholder="e.g. Radiology Equipment" value={form.specialization} onChange={e => setForm({ ...form, specialization: e.target.value })} />
+                <Input className="mt-1.5 rounded-xl" placeholder="e.g. Endoscopy Equipment" value={form.specialization} onChange={e => setForm({ ...form, specialization: e.target.value })} />
               </div>
-              <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Add Technician</Button>
+              <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Add Member</Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      <div className="relative max-w-sm">
-        <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-        <Input placeholder="Search technicians..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
+      {/* Role summary cards */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {(Object.entries(ROLE_CONFIG) as [TechnicianRole, typeof ROLE_CONFIG[TechnicianRole]][]).map(([role, config]) => {
+          const Icon = config.icon;
+          const count = roleCounts[role] || 0;
+          return (
+            <div
+              key={role}
+              onClick={() => setRoleFilter(roleFilter === role ? 'all' : role)}
+              className={`rounded-2xl border border-border/60 bg-card p-4 cursor-pointer transition-all hover:-translate-y-0.5 hover:shadow-md ${roleFilter === role ? 'ring-2 ring-primary/40 shadow-md' : ''}`}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className={`w-7 h-7 rounded-lg ${config.bg} flex items-center justify-center`}>
+                  <Icon size={14} className={config.color} />
+                </div>
+                <p className="text-2xl font-bold text-foreground">{count}</p>
+              </div>
+              <p className="text-[11px] font-semibold text-muted-foreground">{role}</p>
+            </div>
+          );
+        })}
       </div>
+
+      {/* Search & filter */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1 max-w-sm">
+          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search by name, code..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
+        </div>
+        <Select value={roleFilter} onValueChange={setRoleFilter}>
+          <SelectTrigger className="h-10 rounded-xl text-xs w-auto min-w-[180px]">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="Service Head">Service Head</SelectItem>
+            <SelectItem value="Service Coordinator">Service Coordinator</SelectItem>
+            <SelectItem value="Service Engineer">Service Engineer</SelectItem>
+            <SelectItem value="Sales and Service Engineer">Sales & Service Engineer</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-[11px] text-muted-foreground">Showing {filtered.length} of {technicians.length} members</p>
 
       {/* Desktop Table */}
       <div className="hidden md:block glass-card overflow-hidden">
@@ -139,49 +199,61 @@ export default function Technicians() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-border/50 bg-secondary/40">
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Technician</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Employee</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Role</th>
+                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Reporting Manager</th>
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Contact</th>
-                <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Specialization</th>
                 <th className="text-left px-5 py-3.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">Status</th>
                 <th className="px-5 py-3.5"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {filtered.map(t => (
-                <tr key={t.id} className="hover:bg-secondary/30 transition-colors">
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                        <Wrench size={14} className="text-primary" />
+              {filtered.map(t => {
+                const rc = ROLE_CONFIG[t.role] || ROLE_CONFIG['Service Engineer'];
+                const RoleIcon = rc.icon;
+                return (
+                  <tr key={t.id} className="hover:bg-secondary/30 transition-colors">
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-3">
+                        <div className={`w-8 h-8 rounded-lg ${rc.bg} flex items-center justify-center`}>
+                          <RoleIcon size={14} className={rc.color} />
+                        </div>
+                        <div>
+                          <p className="font-semibold text-foreground">{t.name}</p>
+                          <p className="text-[11px] text-muted-foreground font-mono">{t.employeeCode}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-semibold text-foreground">{t.name}</p>
-                        <p className="text-[11px] text-muted-foreground">{t.id}</p>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${rc.bg} ${rc.color}`}>
+                        <RoleIcon size={10} />
+                        {t.role}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5 text-muted-foreground text-xs">{t.reportingManager || '—'}</td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex flex-col gap-0.5 text-muted-foreground text-xs">
+                        {t.phone && <span className="flex items-center gap-1"><Phone size={11} /> {t.phone}</span>}
+                        {t.email && <span className="flex items-center gap-1"><Mail size={11} /> {t.email}</span>}
+                        {!t.phone && !t.email && <span className="text-[11px]">—</span>}
                       </div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex flex-col gap-0.5 text-muted-foreground text-xs">
-                      <span className="flex items-center gap-1"><Phone size={11} /> {t.phone}</span>
-                      <span className="flex items-center gap-1"><Mail size={11} /> {t.email}</span>
-                    </div>
-                  </td>
-                  <td className="px-5 py-3.5 text-muted-foreground">{t.specialization}</td>
-                  <td className="px-5 py-3.5">
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${t.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                      {t.isActive ? <><UserCheck size={11} /> Active</> : <><UserX size={11} /> Inactive</>}
-                    </span>
-                  </td>
-                  <td className="px-5 py-3.5">
-                    <div className="flex items-center gap-2">
-                      <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold hover:underline">Edit</button>
-                      <button onClick={() => openCredentials(t)} className="text-xs text-accent font-semibold hover:underline flex items-center gap-1">
-                        <KeyRound size={10} /> Login
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold ${t.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                        {t.isActive ? <><UserCheck size={11} /> Active</> : <><UserX size={11} /> Inactive</>}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3.5">
+                      <div className="flex items-center gap-2">
+                        <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold hover:underline">Edit</button>
+                        <button onClick={() => openCredentials(t)} className="text-xs text-accent font-semibold hover:underline flex items-center gap-1">
+                          <KeyRound size={10} /> Login
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -189,44 +261,54 @@ export default function Technicians() {
 
       {/* Mobile Cards */}
       <div className="md:hidden space-y-3">
-        {filtered.map((t, i) => (
-          <div
-            key={t.id}
-            className="glass-card p-4 animate-fade-in"
-            style={{ animationDelay: `${i * 50}ms` }}
-          >
-            <div className="flex items-start justify-between mb-2">
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Wrench size={14} className="text-primary" />
+        {filtered.map((t, i) => {
+          const rc = ROLE_CONFIG[t.role] || ROLE_CONFIG['Service Engineer'];
+          const RoleIcon = rc.icon;
+          return (
+            <div
+              key={t.id}
+              className="glass-card p-4 animate-fade-in"
+              style={{ animationDelay: `${i * 50}ms` }}
+            >
+              <div className="flex items-start justify-between mb-2">
+                <div className="flex items-center gap-2.5">
+                  <div className={`w-8 h-8 rounded-lg ${rc.bg} flex items-center justify-center`}>
+                    <RoleIcon size={14} className={rc.color} />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-foreground">{t.name}</p>
+                    <p className="text-[11px] text-muted-foreground font-mono">{t.employeeCode}</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm font-bold text-foreground">{t.name}</p>
-                  <p className="text-[11px] text-muted-foreground">{t.specialization}</p>
-                </div>
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${rc.bg} ${rc.color}`}>
+                  {t.role}
+                </span>
               </div>
-              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${t.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                {t.isActive ? 'Active' : 'Inactive'}
-              </span>
+              <div className="text-[11px] text-muted-foreground mb-2">
+                Reports to: <span className="text-foreground font-medium">{t.reportingManager || '—'}</span>
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-2 border-t border-border/40">
+                {t.phone && <span className="flex items-center gap-1"><Phone size={10} /> {t.phone}</span>}
+                {t.email && <span className="flex items-center gap-1"><Mail size={10} /> {t.email}</span>}
+                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold ${t.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                  {t.isActive ? 'Active' : 'Inactive'}
+                </span>
+              </div>
+              <div className="flex items-center gap-3 mt-3 pt-2 border-t border-border/40">
+                <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold">Edit</button>
+                <button onClick={() => openCredentials(t)} className="text-xs text-accent font-semibold flex items-center gap-1">
+                  <KeyRound size={10} /> Create Login
+                </button>
+              </div>
             </div>
-            <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/40">
-              <span className="flex items-center gap-1"><Phone size={10} /> {t.phone}</span>
-              <span className="flex items-center gap-1"><Mail size={10} /> {t.email}</span>
-            </div>
-            <div className="flex items-center gap-3 mt-3 pt-2 border-t border-border/40">
-              <button onClick={() => openEdit(t)} className="text-xs text-primary font-semibold">Edit</button>
-              <button onClick={() => openCredentials(t)} className="text-xs text-accent font-semibold flex items-center gap-1">
-                <KeyRound size={10} /> Create Login
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Edit Dialog */}
       <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
         <DialogContent className="sm:max-w-md rounded-2xl">
-          <DialogHeader><DialogTitle className="font-display">Edit Technician</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle className="font-display">Edit Team Member</DialogTitle></DialogHeader>
           <div className="space-y-3 pt-2">
             <div>
               <Label className="text-xs font-semibold text-muted-foreground">Name</Label>

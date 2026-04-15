@@ -183,22 +183,34 @@ export const tickets: InstallationTicket[] = [
   { id: 'TK-005', equipmentId: 'E016', equipmentName: 'CMOS HD 3 Chip Endoscopic Camera Console', customerId: 'C004', customerName: 'Rajiv Gandhi Govt. General Hospital-Chennai', location: 'Endoscopy Room 3', status: 'In Progress', assignedTechnician: 'Ravi Krishnan', remarks: 'Awaiting accessories', issueType: null, createdDate: '2015-04-05', completedDate: null },
 ];
 
+export type TechnicianRole = 'Service Head' | 'Service Coordinator' | 'Service Engineer' | 'Sales and Service Engineer';
+
 export interface Technician {
   id: string;
+  employeeCode: string;
   name: string;
   phone: string;
   email: string;
   specialization: string;
+  role: TechnicianRole;
+  reportingManager: string;
   isActive: boolean;
   createdAt: string;
 }
 
 export const technicians: Technician[] = [
-  { id: 'TECH-001', name: 'Amit Verma', phone: '+91 98765 11111', email: 'amit@medserv.com', specialization: 'Endoscopy Equipment', isActive: true, createdAt: '2024-01-01' },
-  { id: 'TECH-002', name: 'Ravi Krishnan', phone: '+91 98765 22222', email: 'ravi@medserv.com', specialization: 'Imaging Systems', isActive: true, createdAt: '2024-01-01' },
-  { id: 'TECH-003', name: 'Suresh Nair', phone: '+91 98765 33333', email: 'suresh@medserv.com', specialization: 'Power Tools & Drills', isActive: true, createdAt: '2024-01-01' },
-  { id: 'TECH-004', name: 'Deepak Joshi', phone: '+91 98765 44444', email: 'deepak@medserv.com', specialization: 'Lab Instruments', isActive: true, createdAt: '2024-01-01' },
-  { id: 'TECH-005', name: 'Manoj Tiwari', phone: '+91 98765 55555', email: 'manoj@medserv.com', specialization: 'General Maintenance', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-001', employeeCode: 'IOS0009', name: 'Uthayakumar B', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Head', reportingManager: 'Thamotharakannan Natarajan', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-002', employeeCode: 'IOS0036', name: 'Lenin Arulananthu', phone: '', email: '', specialization: 'Service and Engineering', role: 'Sales and Service Engineer', reportingManager: 'Venkatesh Kumar Ramalingam', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-003', employeeCode: 'IOS0039', name: 'Kailainathan S', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Engineer', reportingManager: 'Uthayakumar Balasundaram', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-004', employeeCode: 'IOS0040', name: 'Prithiviraj S', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Engineer', reportingManager: 'Uthayakumar Balasundaram', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-005', employeeCode: 'IOS0041', name: 'Muhilan M', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Engineer', reportingManager: 'Uthayakumar Balasundaram', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-006', employeeCode: 'IOS0042', name: 'Raj Goutham Kalaiyarasan', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Engineer', reportingManager: 'Uthayakumar Balasundaram', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-007', employeeCode: 'IOS0043', name: 'Thamaraiselvan G', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Engineer', reportingManager: 'Uthayakumar Balasundaram', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-008', employeeCode: 'IOS0044', name: 'Sowmya T', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Coordinator', reportingManager: 'Thamotharakannan Natarajan', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-009', employeeCode: 'IOS0046', name: 'Jaisitha V', phone: '', email: '', specialization: 'Service and Engineering', role: 'Service Coordinator', reportingManager: 'Brinda D', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-010', employeeCode: 'IOS0054', name: 'Dhinakar Justus Raj A', phone: '', email: '', specialization: 'Service and Engineering', role: 'Sales and Service Engineer', reportingManager: 'Thamotharakannan Natarajan', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-011', employeeCode: 'IOS0055', name: 'Radhakrishnan Ramakrishnan', phone: '', email: '', specialization: 'Service and Engineering', role: 'Sales and Service Engineer', reportingManager: 'Thamotharakannan Natarajan', isActive: true, createdAt: '2024-01-01' },
+  { id: 'TECH-012', employeeCode: 'IOS0056', name: 'Manivannan Ravichandran', phone: '', email: '', specialization: 'Service and Engineering', role: 'Sales and Service Engineer', reportingManager: 'Thamotharakannan Natarajan', isActive: true, createdAt: '2024-01-01' },
 ];
 
 export const issueTypes = ['Power not available', 'Site not ready', 'Accessories missing', 'Other'];

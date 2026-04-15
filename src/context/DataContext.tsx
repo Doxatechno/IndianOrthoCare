@@ -124,10 +124,13 @@ const toPM = (row: any): PMSchedule => ({
 
 const toTechnician = (row: any): Technician => ({
   id: row.id,
+  employeeCode: row.id,
   name: row.name,
   phone: row.phone,
   email: row.email,
   specialization: row.specialization,
+  role: row.specialization?.includes('Head') ? 'Service Head' : row.specialization?.includes('Coordinator') ? 'Service Coordinator' : row.specialization?.includes('Sales') ? 'Sales and Service Engineer' : 'Service Engineer',
+  reportingManager: '',
   isActive: row.is_active,
   createdAt: row.created_at,
 });
@@ -567,10 +570,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const addTechnician = useCallback(async (input: TechnicianInput) => {
     const newTech: Technician = {
       id: nextId(technicians.map(t => t.id), 'TECH-'),
+      employeeCode: '',
       name: input.name,
       phone: input.phone,
       email: input.email,
       specialization: input.specialization,
+      role: 'Service Engineer',
+      reportingManager: '',
       isActive: true,
       createdAt: today(),
     };
