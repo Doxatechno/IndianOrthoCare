@@ -37,7 +37,7 @@ export interface InstallationTicket {
   completedDate: string | null;
 }
 
-export type AMCStatus = 'Quotation Sent' | 'Approved' | 'Payment Pending' | 'Paid' | 'Active';
+export type AMCStatus = 'Quotation Sent' | 'PO Released' | 'Invoice Generated' | 'Payment Received';
 
 export interface AMCContract {
   id: string;
@@ -146,14 +146,14 @@ export const equipment: Equipment[] = rawEquipment.map(e => ({
 
 // AMC kicks in after warranty expires (year 2 onwards) — sample contracts for key equipment
 export const amcContracts: AMCContract[] = [
-  { id: 'AMC-001', equipmentId: 'E002', equipmentName: '1288HD Camera Console', customerId: 'C001', customerName: 'Omandurar Government Estate, Chennai', startDate: '2016-02-20', endDate: '2017-02-20', price: 120000, status: 'Active' },
-  { id: 'AMC-002', equipmentId: 'E013', equipmentName: 'Stryker 1188 HD 3 Chip Camera Console', customerId: 'C001', customerName: 'Omandurar Government Estate, Chennai', startDate: '2017-06-04', endDate: '2018-06-04', price: 250000, status: 'Active' },
-  { id: 'AMC-003', equipmentId: 'E008', equipmentName: 'Stryker Sonopet Universal HP HU25', customerId: 'C002', customerName: 'Thanjavur Medical College & Hospital', startDate: '2016-02-05', endDate: '2017-02-05', price: 45000, status: 'Active' },
-  { id: 'AMC-004', equipmentId: 'E016', equipmentName: 'CMOS HD 3 Chip Endoscopic Camera Console', customerId: 'C004', customerName: 'Rajiv Gandhi Govt. General Hospital-Chennai', startDate: '2016-04-11', endDate: '2017-04-11', price: 85000, status: 'Active' },
-  { id: 'AMC-005', equipmentId: 'E025', equipmentName: 'Stryker 1588 Camera Console', customerId: 'C006', customerName: 'Rajiv Gandhi Govt. General Hospital, Chennai', startDate: '2022-11-17', endDate: '2023-11-17', price: 150000, status: 'Active' },
-  { id: 'AMC-006', equipmentId: 'E010', equipmentName: 'Stryker System6 Dual Trigger Rotary Handpiece', customerId: 'C003', customerName: 'Government Royapettah Hospital', startDate: '2016-05-27', endDate: '2017-05-27', price: 60000, status: 'Active' },
+  { id: 'AMC-001', equipmentId: 'E002', equipmentName: '1288HD Camera Console', customerId: 'C001', customerName: 'Omandurar Government Estate, Chennai', startDate: '2016-02-20', endDate: '2017-02-20', price: 120000, status: 'Payment Received' },
+  { id: 'AMC-002', equipmentId: 'E013', equipmentName: 'Stryker 1188 HD 3 Chip Camera Console', customerId: 'C001', customerName: 'Omandurar Government Estate, Chennai', startDate: '2017-06-04', endDate: '2018-06-04', price: 250000, status: 'Payment Received' },
+  { id: 'AMC-003', equipmentId: 'E008', equipmentName: 'Stryker Sonopet Universal HP HU25', customerId: 'C002', customerName: 'Thanjavur Medical College & Hospital', startDate: '2016-02-05', endDate: '2017-02-05', price: 45000, status: 'Payment Received' },
+  { id: 'AMC-004', equipmentId: 'E016', equipmentName: 'CMOS HD 3 Chip Endoscopic Camera Console', customerId: 'C004', customerName: 'Rajiv Gandhi Govt. General Hospital-Chennai', startDate: '2016-04-11', endDate: '2017-04-11', price: 85000, status: 'Payment Received' },
+  { id: 'AMC-005', equipmentId: 'E025', equipmentName: 'Stryker 1588 Camera Console', customerId: 'C006', customerName: 'Rajiv Gandhi Govt. General Hospital, Chennai', startDate: '2022-11-17', endDate: '2023-11-17', price: 150000, status: 'Payment Received' },
+  { id: 'AMC-006', equipmentId: 'E010', equipmentName: 'Stryker System6 Dual Trigger Rotary Handpiece', customerId: 'C003', customerName: 'Government Royapettah Hospital', startDate: '2016-05-27', endDate: '2017-05-27', price: 60000, status: 'Payment Received' },
   { id: 'AMC-007', equipmentId: 'E029', equipmentName: 'Stryker Universal Battery Charger', customerId: 'C007', customerName: 'Government Head Quarters Hospital, Pollachi', startDate: '2022-07-20', endDate: '2023-07-20', price: 35000, status: 'Quotation Sent' },
-  { id: 'AMC-008', equipmentId: 'E022', equipmentName: 'Stryker SysG Battery Charger', customerId: 'C005', customerName: 'Government Headquarters Hospital- Kancheepuram', startDate: '2018-05-24', endDate: '2019-05-24', price: 40000, status: 'Paid' },
+  { id: 'AMC-008', equipmentId: 'E022', equipmentName: 'Stryker SysG Battery Charger', customerId: 'C005', customerName: 'Government Headquarters Hospital- Kancheepuram', startDate: '2018-05-24', endDate: '2019-05-24', price: 40000, status: 'Payment Received' },
 ];
 
 // PM schedules — 4 PMs per year per AMC contract (quarterly)
