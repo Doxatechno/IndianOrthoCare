@@ -456,7 +456,7 @@ export default function AMCContracts() {
                   <td className="px-5 py-3.5 text-[12px] text-muted-foreground hidden lg:table-cell">{a.startDate} → {a.endDate}</td>
                   <td className="px-5 py-3.5 font-semibold text-foreground">
                     {a.price > 0 ? (
-                      <span className="flex items-center gap-0.5"><IndianRupee size={12} />{a.price.toLocaleString()}</span>
+                      <span className="flex items-center gap-0.5">₹{a.price.toLocaleString()}</span>
                     ) : (
                       <span className="text-muted-foreground text-xs">—</span>
                     )}
@@ -511,7 +511,7 @@ export default function AMCContracts() {
             </div>
             <div className="flex items-center justify-between text-[12px] mb-2">
               <span className="font-semibold text-foreground flex items-center gap-0.5">
-                {a.price > 0 ? <><IndianRupee size={11} />{a.price.toLocaleString()}</> : <span className="text-muted-foreground">No price set</span>}
+                {a.price > 0 ? <>₹{a.price.toLocaleString()}</> : <span className="text-muted-foreground">No price set</span>}
               </span>
               <span className="text-muted-foreground">{a.startDate} → {a.endDate}</span>
             </div>
