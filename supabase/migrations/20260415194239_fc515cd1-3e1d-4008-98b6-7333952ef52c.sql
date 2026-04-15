@@ -1,0 +1,1 @@
+UPDATE equipment SET warranty_end_date = installation_date + INTERVAL '5 years' WHERE installation_date IS NOT NULL;
