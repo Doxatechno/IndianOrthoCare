@@ -171,7 +171,9 @@ export default function AMCContracts() {
       const wEnd = warrantyMap.get(a.equipmentId);
       const daysLeft = getWarrantyDaysLeft(wEnd);
       let matchesWarranty = true;
-      if (warrantyFilter === 'expired') matchesWarranty = daysLeft !== null && daysLeft < 0;
+      if (warrantyFilter === 'all') matchesWarranty = daysLeft === null || daysLeft >= 0;
+      else if (warrantyFilter === 'all_including_expired') matchesWarranty = true;
+      else if (warrantyFilter === 'expired') matchesWarranty = daysLeft !== null && daysLeft < 0;
       else if (warrantyFilter === 'critical') matchesWarranty = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
       else if (warrantyFilter === 'expiring') matchesWarranty = daysLeft !== null && daysLeft > 30 && daysLeft <= 180;
       else if (warrantyFilter === 'active') matchesWarranty = daysLeft !== null && daysLeft > 180;
@@ -181,12 +183,13 @@ export default function AMCContracts() {
 
   // Dashboard stats
   const stats = useMemo(() => {
-    const total = data.length;
-    const byStatus = allStatuses.map(s => ({ status: s, count: data.filter(a => a.status === s).length }));
+    const nonExpired = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d === null || d >= 0; });
+    const total = nonExpired.length;
+    const byStatus = allStatuses.map(s => ({ status: s, count: nonExpired.filter(a => a.status === s).length }));
     const expired = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d < 0; }).length;
-    const critical = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d >= 0 && d <= 30; }).length;
-    const expiringSoon = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d > 30 && d <= 180; }).length;
-    const totalValue = data.reduce((sum, a) => sum + a.price, 0);
+    const critical = nonExpired.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d >= 0 && d <= 30; }).length;
+    const expiringSoon = nonExpired.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d > 30 && d <= 180; }).length;
+    const totalValue = nonExpired.reduce((sum, a) => sum + a.price, 0);
     return { total, byStatus, expired, critical, expiringSoon, totalValue };
   }, [data, warrantyMap]);
 
@@ -374,11 +377,12 @@ export default function AMCContracts() {
           <Select value={warrantyFilter} onValueChange={setWarrantyFilter}>
             <SelectTrigger className="h-9 text-xs w-44 rounded-xl"><SelectValue placeholder="Warranty" /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Warranty</SelectItem>
-              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="all">Active & Expiring</SelectItem>
               <SelectItem value="critical">Critical (≤30d)</SelectItem>
               <SelectItem value="expiring">Expiring (≤180d)</SelectItem>
               <SelectItem value="active">Active (&gt;180d)</SelectItem>
+              <SelectItem value="expired">Expired</SelectItem>
+              <SelectItem value="all_including_expired">All (incl. Expired)</SelectItem>
             </SelectContent>
           </Select>
           {(statusFilter !== 'all' || warrantyFilter !== 'all' || search) && (
