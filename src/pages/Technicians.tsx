@@ -39,6 +39,16 @@ export default function Technicians() {
     return matchSearch && matchRole;
   });
 
+  // Resolve reporting manager: if it's a TECH-xxx ID, show "Name (ID)"
+  const resolveManager = (manager: string) => {
+    if (!manager) return '—';
+    if (manager.startsWith('TECH-')) {
+      const found = technicians.find(t => t.id === manager);
+      return found ? `${found.name} (${found.employeeCode})` : manager;
+    }
+    return manager;
+  };
+
   // Group by role for summary
   const roleCounts = technicians.reduce((acc, t) => {
     acc[t.role] = (acc[t.role] || 0) + 1;
@@ -230,7 +240,7 @@ export default function Technicians() {
                         {t.role}
                       </span>
                     </td>
-                    <td className="px-5 py-3.5 text-muted-foreground text-xs">{t.reportingManager || '—'}</td>
+                    <td className="px-5 py-3.5 text-muted-foreground text-xs">{resolveManager(t.reportingManager)}</td>
                     <td className="px-5 py-3.5">
                       <div className="flex flex-col gap-0.5 text-muted-foreground text-xs">
                         {t.phone && <span className="flex items-center gap-1"><Phone size={11} /> {t.phone}</span>}
@@ -285,7 +295,7 @@ export default function Technicians() {
                 </span>
               </div>
               <div className="text-[11px] text-muted-foreground mb-2">
-                Reports to: <span className="text-foreground font-medium">{t.reportingManager || '—'}</span>
+                Reports to: <span className="text-foreground font-medium">{resolveManager(t.reportingManager)}</span>
               </div>
               <div className="flex items-center justify-between text-[11px] text-muted-foreground pt-2 border-t border-border/40">
                 {t.phone && <span className="flex items-center gap-1"><Phone size={10} /> {t.phone}</span>}
