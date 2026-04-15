@@ -69,46 +69,91 @@ export default function AMCContracts() {
   // Auto-create AMC contracts for equipment with warranties expiring within 180 days
   const autoCreateAMCForExpiringEquipment = useCallback(async () => {
     if (autoCreating) return;
-    const expiringEquipment = equipment.filter(e => {
-      if (!e.warrantyEndDate) return false;
-      const daysLeft = getWarrantyDaysLeft(e.warrantyEndDate);
-      if (daysLeft === null || daysLeft < 0) return false;
-      if (daysLeft > 180) return false;
-      const hasAMC = data.some(a => a.equipmentId === e.id);
-      return !hasAMC;
-    });
-
-    if (expiringEquipment.length === 0) return;
-
     setAutoCreating(true);
-    for (const eq of expiringEquipment) {
-      const warrantyEnd = new Date(eq.warrantyEndDate!);
-      const amcStart = new Date(warrantyEnd);
-      amcStart.setDate(amcStart.getDate() + 1);
-      const amcEnd = new Date(amcStart);
-      amcEnd.setFullYear(amcEnd.getFullYear() + 1);
 
-      try {
-        await addAMCContract({
-          equipmentId: eq.id,
-          startDate: amcStart.toISOString().split('T')[0],
-          endDate: amcEnd.toISOString().split('T')[0],
-          price: 0,
-        });
-        const sb = supabase as any;
-        const { data: rows } = await sb.from('amc_contracts').select('id').eq('equipment_id', eq.id).order('id', { ascending: false }).limit(1);
-        if (rows && rows.length > 0) {
-          await sb.from('amc_contracts').update({ warranty_end_date: eq.warrantyEndDate }).eq('id', rows[0].id);
-        }
-      } catch (err) {
-        console.error('Auto-create AMC failed for', eq.id, err);
+    try {
+      const sb = supabase as any;
+
+      // 1. Get all equipment_ids that already have AMC contracts (server-side, not stale state)
+      const { data: existingRows, error: existingErr } = await sb
+        .from('amc_contracts')
+        .select('equipment_id, id');
+      if (existingErr) throw existingErr;
+
+      const coveredEquipmentIds = new Set((existingRows ?? []).map((r: any) => r.equipment_id));
+
+      // 2. Find the current max AMC numeric ID
+      let maxNum = 0;
+      for (const r of existingRows ?? []) {
+        const n = Number(String(r.id).replace('AMC-', ''));
+        if (Number.isFinite(n) && n > maxNum) maxNum = n;
       }
+
+      // 3. Filter expiring equipment not already covered
+      const expiringEquipment = equipment.filter(e => {
+        if (!e.warrantyEndDate) return false;
+        const daysLeft = getWarrantyDaysLeft(e.warrantyEndDate);
+        if (daysLeft === null || daysLeft < 0) return false;
+        if (daysLeft > 180) return false;
+        return !coveredEquipmentIds.has(e.id);
+      });
+
+      if (expiringEquipment.length === 0) return;
+
+      // 4. Build batch rows with incrementing IDs
+      const newRows = expiringEquipment.map((eq, idx) => {
+        const warrantyEnd = new Date(eq.warrantyEndDate!);
+        const amcStart = new Date(warrantyEnd);
+        amcStart.setDate(amcStart.getDate() + 1);
+        const amcEnd = new Date(amcStart);
+        amcEnd.setFullYear(amcEnd.getFullYear() + 1);
+        const newId = `AMC-${String(maxNum + idx + 1).padStart(3, '0')}`;
+        const customer = customers.find(c => c.id === eq.customerId);
+
+        return {
+          id: newId,
+          equipment_id: eq.id,
+          equipment_name: eq.name,
+          customer_id: eq.customerId,
+          customer_name: customer?.name || eq.customerName,
+          start_date: amcStart.toISOString().split('T')[0],
+          end_date: amcEnd.toISOString().split('T')[0],
+          price: 0,
+          status: 'Quotation Sent',
+          warranty_end_date: eq.warrantyEndDate,
+        };
+      });
+
+      // 5. Single batch insert
+      const { error: insertErr } = await sb.from('amc_contracts').insert(newRows);
+      if (insertErr) throw insertErr;
+
+      // 6. Reload full data by re-fetching from context (trigger re-render via window reload workaround)
+      // Instead, directly update local state via the data context's loadAllData
+      // We'll just reload the page data by calling window.location.reload() — but better: just refetch
+      // Simplest: append to local state
+      const newAMCs = newRows.map((r: any) => ({
+        id: r.id,
+        equipmentId: r.equipment_id,
+        equipmentName: r.equipment_name,
+        customerId: r.customer_id,
+        customerName: r.customer_name,
+        startDate: r.start_date,
+        endDate: r.end_date,
+        price: r.price,
+        status: r.status as AMCStatus,
+      }));
+      // We can't directly set amcContracts from here, so reload
+      window.location.reload();
+    } catch (err) {
+      console.error('Auto-create AMC batch failed:', err);
+    } finally {
+      setAutoCreating(false);
     }
-    setAutoCreating(false);
-  }, [equipment, data, addAMCContract, autoCreating]);
+  }, [equipment, customers, autoCreating]);
 
   useEffect(() => {
-    if (equipment.length > 0 && data.length >= 0) {
+    if (equipment.length > 0) {
       autoCreateAMCForExpiringEquipment();
     }
   }, [equipment.length]);
