@@ -26,7 +26,7 @@ export default function PMSchedules() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignMode, setAssignMode] = useState<'auto' | 'manual'>('auto');
 
-  const activeTechs = useMemo(() => technicians.filter(t => t.isActive), [technicians]);
+  const activeTechs = useMemo(() => technicians.filter(t => t.isActive && (t.role === 'Service Engineer' || t.role === 'Sales and Service Engineer')), [technicians]);
 
   const filtered = useMemo(() => data.filter(p => {
     const matchSearch = p.equipmentName.toLowerCase().includes(search.toLowerCase()) ||
