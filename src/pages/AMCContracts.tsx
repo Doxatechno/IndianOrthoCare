@@ -183,14 +183,15 @@ export default function AMCContracts() {
 
   // Dashboard stats
   const stats = useMemo(() => {
-    const nonExpired = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d === null || d >= 0; });
-    const total = nonExpired.length;
-    const byStatus = allStatuses.map(s => ({ status: s, count: nonExpired.filter(a => a.status === s).length }));
+    const relevant = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d >= 0 && d <= 180; });
+    const total = relevant.length;
+    const quotationCreated = relevant.filter(a => a.price > 0).length;
+    const quotationPending = relevant.filter(a => a.price === 0).length;
+    const critical = relevant.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d >= 0 && d <= 30; }).length;
+    const expiringSoon = relevant.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d > 30 && d <= 180; }).length;
     const expired = data.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d < 0; }).length;
-    const critical = nonExpired.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d >= 0 && d <= 30; }).length;
-    const expiringSoon = nonExpired.filter(a => { const d = getWarrantyDaysLeft(warrantyMap.get(a.equipmentId)); return d !== null && d > 30 && d <= 180; }).length;
-    const totalValue = nonExpired.reduce((sum, a) => sum + a.price, 0);
-    return { total, byStatus, expired, critical, expiringSoon, totalValue };
+    const byStatus = allStatuses.map(s => ({ status: s, count: relevant.filter(a => a.status === s).length }));
+    return { total, quotationCreated, quotationPending, critical, expiringSoon, expired, byStatus };
   }, [data, warrantyMap]);
 
   const handleAdd = async () => {
@@ -315,7 +316,7 @@ export default function AMCContracts() {
       </div>
 
       {/* Mini Dashboard */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
         <Card className="glass-card border-0">
           <CardContent className="p-3 text-center">
             <div className="flex items-center justify-center gap-1.5 mb-1">
@@ -325,16 +326,22 @@ export default function AMCContracts() {
             <p className="text-2xl font-bold text-foreground">{stats.total}</p>
           </CardContent>
         </Card>
-        <Card className="glass-card border-0">
+        <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-success/30 transition-all" onClick={() => setStatusFilter('all')}>
           <CardContent className="p-3 text-center">
-            <span className="text-[11px] font-semibold text-muted-foreground uppercase">Value</span>
-            <p className="text-lg font-bold text-foreground flex items-center justify-center gap-0.5"><IndianRupee size={14} />{stats.totalValue.toLocaleString()}</p>
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <FileText size={14} className="text-success" />
+              <span className="text-[11px] font-semibold text-success uppercase">Quotation Created</span>
+            </div>
+            <p className="text-2xl font-bold text-success">{stats.quotationCreated}</p>
           </CardContent>
         </Card>
-        <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-destructive/30 transition-all" onClick={() => setWarrantyFilter(warrantyFilter === 'expired' ? 'all' : 'expired')}>
+        <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-warning/30 transition-all" onClick={() => setStatusFilter('all')}>
           <CardContent className="p-3 text-center">
-            <span className="text-[11px] font-semibold text-destructive uppercase">Expired</span>
-            <p className="text-2xl font-bold text-destructive">{stats.expired}</p>
+            <div className="flex items-center justify-center gap-1.5 mb-1">
+              <AlertTriangle size={14} className="text-warning" />
+              <span className="text-[11px] font-semibold text-warning uppercase">Quotation Pending</span>
+            </div>
+            <p className="text-2xl font-bold text-warning">{stats.quotationPending}</p>
           </CardContent>
         </Card>
         <Card className="glass-card border-0 cursor-pointer hover:ring-2 ring-destructive/30 transition-all" onClick={() => setWarrantyFilter(warrantyFilter === 'critical' ? 'all' : 'critical')}>
@@ -349,14 +356,6 @@ export default function AMCContracts() {
             <p className="text-2xl font-bold text-warning">{stats.expiringSoon}</p>
           </CardContent>
         </Card>
-        {stats.byStatus.map(s => (
-          <Card key={s.status} className="glass-card border-0 cursor-pointer hover:ring-2 ring-primary/30 transition-all" onClick={() => setStatusFilter(statusFilter === s.status ? 'all' : s.status)}>
-            <CardContent className="p-3 text-center">
-              <span className="text-[11px] font-semibold text-muted-foreground uppercase truncate block">{s.status}</span>
-              <p className="text-2xl font-bold text-foreground">{s.count}</p>
-            </CardContent>
-          </Card>
-        ))}
       </div>
 
       {/* Filters Row */}
