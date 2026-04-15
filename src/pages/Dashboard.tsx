@@ -39,7 +39,7 @@ export default function Dashboard() {
       .map(e => {
         const end = new Date(e.warrantyEndDate!);
         const daysLeft = Math.ceil((end.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && a.status === 'Active');
+        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && a.status === 'Payment Received');
         return { ...e, daysLeft, hasAMC };
       })
       .filter(e => !e.hasAMC) // Only show those without active AMC
@@ -74,7 +74,7 @@ export default function Dashboard() {
         return new Date(e.warrantyEndDate) < now;
       })
       .map(e => {
-        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && (a.status === 'Active' || a.status === 'Paid'));
+        const hasAMC = amcContracts.some(a => a.equipmentId === e.id && (a.status === 'Payment Received'));
         return { ...e, hasAMC };
       })
       .filter(e => !e.hasAMC)
@@ -101,8 +101,8 @@ export default function Dashboard() {
       link: '/tickets'
     },
     {
-      label: 'Active AMCs',
-      value: amcContracts.filter(a => a.status === 'Active').length,
+      label: 'Paid AMCs',
+      value: amcContracts.filter(a => a.status === 'Payment Received').length,
       subtitle: 'Running contracts',
       icon: Shield,
       gradient: 'gradient-card-3',
@@ -128,10 +128,10 @@ export default function Dashboard() {
   ];
 
   const amcPieData = [
-    { name: 'Active', value: amcContracts.filter(a => a.status === 'Active').length },
-    { name: 'Paid', value: amcContracts.filter(a => a.status === 'Paid').length },
+    { name: 'Payment Received', value: amcContracts.filter(a => a.status === 'Payment Received').length },
+    { name: 'Invoice Generated', value: amcContracts.filter(a => a.status === 'Invoice Generated').length },
     { name: 'Quotation Sent', value: amcContracts.filter(a => a.status === 'Quotation Sent').length },
-    { name: 'Approved', value: amcContracts.filter(a => a.status === 'Approved').length },
+    { name: 'PO Released', value: amcContracts.filter(a => a.status === 'PO Released').length },
   ];
 
   return (
