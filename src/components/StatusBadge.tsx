@@ -11,8 +11,9 @@ const statusConfig: Record<string, { bg: string; text: string; border: string; d
   'Assigned': { bg: 'bg-primary/10', text: 'text-primary', border: 'border-primary/20', dot: 'bg-primary' },
   'Pending': { bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/20', dot: 'bg-warning' },
   'Quotation Sent': { bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/20', dot: 'bg-warning' },
-  'Payment Pending': { bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/20', dot: 'bg-warning' },
-  'Approved': { bg: 'bg-accent/10', text: 'text-accent', border: 'border-accent/20', dot: 'bg-accent' },
+  'PO Released': { bg: 'bg-accent/10', text: 'text-accent', border: 'border-accent/20', dot: 'bg-accent' },
+  'Invoice Generated': { bg: 'bg-info/10', text: 'text-info', border: 'border-info/20', dot: 'bg-info' },
+  'Payment Received': { bg: 'bg-success/10', text: 'text-success', border: 'border-success/20', dot: 'bg-success' },
   'Issue Reported': { bg: 'bg-destructive/10', text: 'text-destructive', border: 'border-destructive/20', dot: 'bg-destructive' },
 };
 

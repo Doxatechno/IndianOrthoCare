@@ -503,8 +503,8 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     setAmcContracts(prev => prev.map(a => (a.id === amcId ? { ...a, status } : a)));
 
-    // Auto-generate 4 quarterly PM schedules when AMC becomes Active
-    if (status === 'Active') {
+    // Auto-generate 4 quarterly PM schedules when AMC payment is received
+    if (status === 'Payment Received') {
       const amc = amcContracts.find(a => a.id === amcId);
       if (!amc) return;
 
