@@ -265,8 +265,18 @@ export function DataProvider({ children }: { children: ReactNode }) {
     };
 
     init();
+
+    // Reload data whenever auth state changes (login/logout) so RLS-protected
+    // tables (tickets, pm_schedules, technicians) re-fetch with the new JWT.
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
+      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+        loadAllData().catch(err => console.error('Reload after auth change failed:', err));
+      }
+    });
+
     return () => {
       mounted = false;
+      subscription.unsubscribe();
     };
   }, [loadAllData, seedIfEmpty]);
 
