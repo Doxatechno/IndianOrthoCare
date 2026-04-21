@@ -566,7 +566,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     setPMSchedules(prev => prev.map(p => (p.id === pmId ? { ...p, ...patch } : p)));
 
-    // Auto-create a ticket when a technician is assigned to a PM schedule
+    // Auto-create a ticket when a technician is assigned to a PM schedule.
+    // Use a deterministic ticket ID derived from the PM ID (e.g. TK-PM-030-Q1)
+    // so that rapid auto-assignment loops can't collide on a shared sequence,
+    // and re-assigning the same PM upserts the same ticket instead of duplicating it.
     if (patch.assignedTechnician && patch.status === 'Assigned') {
       const pm = pmSchedules.find(p => p.id === pmId);
       if (!pm) return;
@@ -574,7 +577,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const equip = equipment.find(e => e.id === pm.equipmentId);
       const customer = customers.find(c => c.id === equip?.customerId);
 
-      const ticketId = nextId(tickets.map(t => t.id), 'TK-');
+      const ticketId = `TK-${pm.id}`;
       const newTicket: InstallationTicket = {
         id: ticketId,
         equipmentId: pm.equipmentId,
@@ -590,7 +593,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
         completedDate: null,
       };
 
-      const { error: ticketError } = await sb.from('tickets').insert({
+      const { error: ticketError } = await sb.from('tickets').upsert({
         id: newTicket.id,
         equipment_id: newTicket.equipmentId,
         equipment_name: newTicket.equipmentName,
@@ -603,15 +606,21 @@ export function DataProvider({ children }: { children: ReactNode }) {
         issue_type: newTicket.issueType,
         created_date: newTicket.createdDate,
         completed_date: newTicket.completedDate,
-      });
+      }, { onConflict: 'id' });
 
       if (ticketError) {
         console.error('Failed to auto-create ticket for PM:', ticketError);
       } else {
-        setTickets(prev => [newTicket, ...prev]);
+        setTickets(prev => {
+          const existing = prev.find(t => t.id === ticketId);
+          if (existing) {
+            return prev.map(t => (t.id === ticketId ? { ...t, ...newTicket } : t));
+          }
+          return [newTicket, ...prev];
+        });
       }
     }
-  }, [pmSchedules, equipment, customers, tickets]);
+  }, [pmSchedules, equipment, customers]);
 
   const addTechnician = useCallback(async (input: TechnicianInput) => {
     const newTech: Technician = {
