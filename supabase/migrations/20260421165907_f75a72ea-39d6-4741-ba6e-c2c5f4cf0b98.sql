@@ -1,0 +1,1 @@
+DELETE FROM public.tickets WHERE id IN ('TK-001','TK-002','TK-003');
