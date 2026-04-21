@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/context/AuthContext';
 import { 
   LayoutDashboard, Users, Cpu, ClipboardList, Shield, CalendarCheck, 
-  Menu, X, ChevronRight, Bell, Search, Heart, Settings, Wrench
+  Menu, X, ChevronRight, Bell, Search, Heart, LogOut, Wrench
 } from 'lucide-react';
 
 const navItems = [
@@ -18,8 +19,20 @@ const navItems = [
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   const currentPage = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/login', { replace: true });
+  };
+
+  const emailInitials = (user?.email ?? 'AD')
+    .split('@')[0]
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -86,13 +99,19 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="p-3 mb-2">
           <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-white/8 border border-white/5">
             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-[10px] font-bold text-white shadow-md">
-              AD
+              {emailInitials}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="text-[12px] font-semibold text-white truncate">Admin User</p>
+              <p className="text-[12px] font-semibold text-white truncate">{user?.email ?? 'Admin'}</p>
               <p className="text-[10px] text-white/35 font-medium">Administrator</p>
             </div>
-            <Settings size={14} className="text-white/30 hover:text-white/60 cursor-pointer transition-colors" />
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              className="text-white/40 hover:text-white transition-colors"
+            >
+              <LogOut size={14} />
+            </button>
           </div>
         </div>
       </aside>
@@ -118,8 +137,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <Bell size={18} />
               <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full ring-2 ring-card" />
             </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-[10px] font-bold text-white shadow-md ml-1 cursor-pointer hover:shadow-lg transition-shadow">
-              AD
+            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-[10px] font-bold text-white shadow-md ml-1 cursor-pointer hover:shadow-lg transition-shadow" title={user?.email ?? ''}>
+              {emailInitials}
             </div>
           </div>
         </header>

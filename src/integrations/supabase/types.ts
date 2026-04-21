@@ -290,12 +290,40 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      current_technician_id: { Args: never; Returns: string }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       amc_status:
@@ -303,6 +331,7 @@ export type Database = {
         | "PO Released"
         | "Invoice Generated"
         | "Payment Received"
+      app_role: "admin" | "technician"
       pm_status: "Pending" | "Assigned" | "Completed"
       ticket_status:
         | "Pending"
@@ -443,6 +472,7 @@ export const Constants = {
         "Invoice Generated",
         "Payment Received",
       ],
+      app_role: ["admin", "technician"],
       pm_status: ["Pending", "Assigned", "Completed"],
       ticket_status: [
         "Pending",

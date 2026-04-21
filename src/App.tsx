@@ -15,7 +15,9 @@ import PMSchedules from "@/pages/PMSchedules";
 import Technicians from "@/pages/Technicians";
 import TechnicianPortal from "@/pages/TechnicianPortal";
 import TechnicianLogin from "@/pages/TechnicianLogin";
+import AdminLogin from "@/pages/AdminLogin";
 import TechProtectedRoute from "@/components/TechProtectedRoute";
+import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import RaiseTicket from "@/pages/RaiseTicket";
 import NotFound from "./pages/NotFound.tsx";
 
@@ -38,6 +40,7 @@ const App = () => (
         <DataProvider>
           <BrowserRouter>
             <Routes>
+              <Route path="/login" element={<AdminLogin />} />
               <Route path="/technician-login" element={<TechnicianLogin />} />
               <Route path="/raise-ticket/:equipmentId" element={<RaiseTicket />} />
               <Route path="/technician-portal" element={
@@ -45,7 +48,11 @@ const App = () => (
                   <TechnicianPortal />
                 </TechProtectedRoute>
               } />
-              <Route element={<AdminLayout />}>
+              <Route element={
+                <AdminProtectedRoute>
+                  <AdminLayout />
+                </AdminProtectedRoute>
+              }>
                 <Route path="/" element={<Dashboard />} />
                 <Route path="/customers" element={<Customers />} />
                 <Route path="/equipment" element={<EquipmentPage />} />
