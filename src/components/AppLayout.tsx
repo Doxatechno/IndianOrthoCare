@@ -7,12 +7,12 @@ import {
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/customers', label: 'Customers', icon: Users },
   { path: '/equipment', label: 'Equipment', icon: Cpu },
-  { path: '/tickets', label: 'Tickets', icon: ClipboardList },
-  { path: '/technicians', label: 'Technicians', icon: Wrench },
   { path: '/amc', label: 'AMC Contracts', icon: Shield },
   { path: '/pm-schedules', label: 'PM Schedules', icon: CalendarCheck },
+  { path: '/tickets', label: 'Tickets', icon: ClipboardList },
+  { path: '/customers', label: 'Customers', icon: Users },
+  { path: '/technicians', label: 'Technicians', icon: Wrench },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
