@@ -6,6 +6,7 @@ import {
   ClipboardList, Users, Wrench, QrCode, BarChart3, Sparkles, CheckCircle2
 } from 'lucide-react';
 import clientLogo from '@/assets/client-logo.svg';
+import doxaLogo from '@/assets/doxa-techno-logo.png';
 
 const features = [
   { icon: Cpu, title: 'Equipment Registry', desc: 'Track every device, serial number & warranty in one place.' },
@@ -222,9 +223,13 @@ export default function AdminLogin() {
           </p>
         </div>
 
-        <p className="absolute bottom-4 left-1/2 -translate-x-1/2 text-[10px] text-gray-300 uppercase tracking-[0.2em] font-semibold">
-          © Doxa CareX
-        </p>
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[9px] text-gray-400 uppercase tracking-[0.2em] font-semibold">Powered by</span>
+            <img src={doxaLogo} alt="Doxa Techno Solutions" className="h-5 w-auto" />
+          </div>
+          <span className="text-[9px] text-gray-300 uppercase tracking-[0.2em] font-semibold">© Doxa CareX</span>
+        </div>
       </div>
     </div>
   );
