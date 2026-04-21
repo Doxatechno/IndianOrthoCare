@@ -3,8 +3,9 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { 
   LayoutDashboard, Users, Cpu, ClipboardList, Shield, CalendarCheck, 
-  Menu, X, ChevronRight, Bell, Search, Heart, LogOut, Wrench
+  Menu, X, ChevronRight, Bell, Search, LogOut, Wrench
 } from 'lucide-react';
+import clientLogo from '@/assets/client-logo.svg';
 
 const navItems = [
   { path: '/', label: 'Dashboard', icon: LayoutDashboard },
@@ -57,15 +58,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       >
         {/* Logo */}
         <div className="flex items-center justify-between h-[72px] px-5">
-          <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/10">
-              <Heart className="w-4 h-4 text-white" fill="currentColor" />
-            </div>
-            <div>
-              <h1 className="text-sm font-bold text-white tracking-tight font-display">Doxa CareX</h1>
-              <p className="text-[9px] text-white/40 uppercase tracking-[0.2em] font-medium">Service Manager</p>
-            </div>
-          </div>
+          <img src={clientLogo} alt="Indian Orthocare" className="h-8 w-auto brightness-0 invert" />
           <button onClick={() => setSidebarOpen(false)} className="lg:hidden p-1.5 rounded-lg text-white/50 hover:text-white hover:bg-white/10 transition-colors">
             <X size={16} />
           </button>
