@@ -7,6 +7,7 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isTechnician: boolean;
+  isAdmin: boolean;
   technicianId: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
@@ -19,42 +20,37 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [technicianId, setTechnicianId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  const loadProfile = async (userId: string) => {
+    const [techRes, rolesRes] = await Promise.all([
+      (supabase as any).from('technicians').select('id').eq('user_id', userId).maybeSingle(),
+      (supabase as any).from('user_roles').select('role').eq('user_id', userId),
+    ]);
+    setTechnicianId(techRes.data?.id ?? null);
+    const roles: string[] = (rolesRes.data ?? []).map((r: any) => r.role);
+    setIsAdmin(roles.includes('admin'));
+  };
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        // Fetch technician record linked to this user
-        setTimeout(async () => {
-          const { data } = await (supabase as any)
-            .from('technicians')
-            .select('id')
-            .eq('user_id', session.user.id)
-            .maybeSingle();
-          setTechnicianId(data?.id ?? null);
-        }, 0);
+        setTimeout(() => { loadProfile(session.user.id); }, 0);
       } else {
         setTechnicianId(null);
+        setIsAdmin(false);
       }
     });
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        (supabase as any)
-          .from('technicians')
-          .select('id')
-          .eq('user_id', session.user.id)
-          .maybeSingle()
-          .then(({ data }: any) => {
-            setTechnicianId(data?.id ?? null);
-            setLoading(false);
-          });
-      } else {
-        setLoading(false);
+        await loadProfile(session.user.id);
       }
+      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -68,6 +64,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
     setTechnicianId(null);
+    setIsAdmin(false);
   };
 
   return (
@@ -76,6 +73,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       session,
       loading,
       isTechnician: !!technicianId,
+      isAdmin,
       technicianId,
       signIn,
       signOut,
