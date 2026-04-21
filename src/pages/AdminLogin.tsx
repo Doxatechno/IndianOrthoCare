@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import {
-  Heart, LogIn, Eye, EyeOff, Cpu, Shield, CalendarCheck,
+  LogIn, Eye, EyeOff, Cpu, Shield, CalendarCheck,
   ClipboardList, Users, Wrench, QrCode, BarChart3, Sparkles, CheckCircle2
 } from 'lucide-react';
+import clientLogo from '@/assets/client-logo.svg';
 
 const features = [
   { icon: Cpu, title: 'Equipment Registry', desc: 'Track every device, serial number & warranty in one place.' },
@@ -73,14 +74,8 @@ export default function AdminLogin() {
 
         {/* Header */}
         <div className="relative z-10">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md flex items-center justify-center border border-white/15 shadow-2xl">
-              <Heart className="w-5 h-5 text-white" fill="currentColor" />
-            </div>
-            <div>
-              <h1 className="text-xl font-bold text-white tracking-tight font-display">Doxa CareX</h1>
-              <p className="text-[10px] text-white/50 uppercase tracking-[0.25em] font-semibold">Service Manager</p>
-            </div>
+          <div className="inline-flex items-center px-5 py-3 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 shadow-2xl">
+            <img src={clientLogo} alt="Indian Orthocare" className="h-10 w-auto brightness-0 invert" />
           </div>
         </div>
 
@@ -137,15 +132,8 @@ export default function AdminLogin() {
       {/* RIGHT: Login form */}
       <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-10 bg-white relative lg:overflow-y-auto lg:max-h-screen">
         {/* Mobile-only logo */}
-        <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
-          <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg"
-            style={{ background: 'linear-gradient(135deg, hsl(280, 70%, 55%), hsl(240, 65%, 40%))' }}>
-            <Heart className="w-5 h-5 text-white" fill="currentColor" />
-          </div>
-          <div>
-            <h1 className="text-lg font-bold text-gray-800 tracking-tight font-display">Doxa CareX</h1>
-            <p className="text-[9px] text-gray-400 uppercase tracking-[0.2em] font-semibold">Service Manager</p>
-          </div>
+        <div className="lg:hidden flex items-center justify-center mb-8">
+          <img src={clientLogo} alt="Indian Orthocare" className="h-12 w-auto" />
         </div>
 
         <div className="w-full max-w-sm mx-auto">
