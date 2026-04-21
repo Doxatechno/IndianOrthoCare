@@ -46,10 +46,10 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row overflow-hidden" style={{ background: 'hsl(240, 30%, 8%)' }}>
-      {/* LEFT: Feature showcase */}
+    <div className="min-h-screen flex flex-col lg:flex-row lg:overflow-hidden overflow-y-auto" style={{ background: 'hsl(240, 30%, 8%)' }}>
+      {/* LEFT: Feature showcase (scrollable on its own on desktop) */}
       <div
-        className="relative flex-1 hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-hidden"
+        className="relative flex-1 hidden lg:flex flex-col justify-between p-12 xl:p-16 overflow-y-auto lg:max-h-screen"
         style={{
           background:
             'radial-gradient(circle at 20% 0%, hsl(280, 70%, 35%) 0%, transparent 50%), radial-gradient(circle at 80% 100%, hsl(200, 80%, 30%) 0%, transparent 50%), linear-gradient(160deg, hsl(260, 60%, 22%) 0%, hsl(240, 55%, 14%) 100%)',
@@ -135,7 +135,7 @@ export default function AdminLogin() {
       </div>
 
       {/* RIGHT: Login form */}
-      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-10 bg-white relative">
+      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-10 bg-white relative lg:overflow-y-auto lg:max-h-screen">
         {/* Mobile-only logo */}
         <div className="lg:hidden flex items-center justify-center gap-3 mb-8">
           <div className="w-11 h-11 rounded-2xl flex items-center justify-center shadow-lg"
