@@ -454,22 +454,22 @@ export default function AMCContracts() {
       </div>
 
       {/* Filters Row */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-        <div className="relative flex-1 max-w-sm">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+        <div className="relative flex-1 sm:max-w-sm">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search AMC contracts..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <div className="flex gap-2 items-center flex-wrap">
-          <Filter size={14} className="text-muted-foreground" />
+          <Filter size={14} className="text-muted-foreground hidden sm:block shrink-0" />
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="h-9 text-xs w-44 rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-xs flex-1 sm:flex-none sm:w-44 min-w-[140px] rounded-xl"><SelectValue placeholder="Status" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">All Statuses</SelectItem>
               {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
             </SelectContent>
           </Select>
           <Select value={warrantyFilter} onValueChange={setWarrantyFilter}>
-            <SelectTrigger className="h-9 text-xs w-44 rounded-xl"><SelectValue placeholder="Warranty" /></SelectTrigger>
+            <SelectTrigger className="h-9 text-xs flex-1 sm:flex-none sm:w-44 min-w-[140px] rounded-xl"><SelectValue placeholder="Warranty" /></SelectTrigger>
             <SelectContent>
               <SelectItem value="all">Active & Expiring</SelectItem>
               <SelectItem value="critical">Critical (≤30d)</SelectItem>
@@ -480,7 +480,7 @@ export default function AMCContracts() {
             </SelectContent>
           </Select>
           {(statusFilter !== 'all' || warrantyFilter !== 'all' || search) && (
-            <Button variant="ghost" size="sm" className="text-xs h-8" onClick={() => { setStatusFilter('all'); setWarrantyFilter('all'); setSearch(''); }}>
+            <Button variant="ghost" size="sm" className="text-xs h-8 shrink-0" onClick={() => { setStatusFilter('all'); setWarrantyFilter('all'); setSearch(''); }}>
               Clear
             </Button>
           )}
