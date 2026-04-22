@@ -196,14 +196,14 @@ export default function Dashboard() {
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        <div className="lg:col-span-3 glass-card p-5 opacity-0 animate-fade-in" style={{ animationDelay: '400ms' }}>
-          <div className="flex items-center justify-between mb-5">
-            <div>
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="lg:col-span-3 glass-card p-4 sm:p-5 opacity-0 animate-fade-in" style={{ animationDelay: '400ms' }}>
+          <div className="flex items-center justify-between mb-4 sm:mb-5 gap-2 flex-wrap">
+            <div className="min-w-0">
               <h3 className="text-sm font-bold text-foreground font-display">Service History</h3>
-              <p className="text-[11px] text-muted-foreground mt-0.5">Tickets vs completions over time</p>
+              <p className="text-[11px] text-muted-foreground mt-0.5">Tickets vs completions</p>
             </div>
-            <div className="flex items-center gap-4 text-[11px]">
+            <div className="flex items-center gap-3 sm:gap-4 text-[11px]">
               <div className="flex items-center gap-1.5">
                 <div className="w-2.5 h-2.5 rounded-full bg-primary" />
                 <span className="text-muted-foreground">Tickets</span>
@@ -214,8 +214,8 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <ResponsiveContainer width="100%" height={240}>
-            <AreaChart data={ticketStatusData}>
+          <ResponsiveContainer width="100%" height={200} className="sm:!h-[240px]">
+            <AreaChart data={ticketStatusData} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorTickets" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="hsl(250,75%,60%)" stopOpacity={0.3}/>
@@ -228,7 +228,7 @@ export default function Dashboard() {
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="hsl(230,20%,90%)" vertical={false} />
               <XAxis dataKey="name" tick={{ fontSize: 11, fill: 'hsl(230,10%,46%)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fontSize: 11, fill: 'hsl(230,10%,46%)' }} axisLine={false} tickLine={false} />
+              <YAxis tick={{ fontSize: 11, fill: 'hsl(230,10%,46%)' }} axisLine={false} tickLine={false} width={30} />
               <Tooltip
                 contentStyle={{
                   borderRadius: '14px',
@@ -247,7 +247,7 @@ export default function Dashboard() {
         </div>
 
         <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="glass-card p-5 flex-1 opacity-0 animate-fade-in" style={{ animationDelay: '500ms' }}>
+          <div className="glass-card p-4 sm:p-5 flex-1 opacity-0 animate-fade-in" style={{ animationDelay: '500ms' }}>
             <h3 className="text-sm font-bold text-foreground font-display mb-1">AMC Status</h3>
             <p className="text-[11px] text-muted-foreground mb-3">Contract breakdown</p>
             <ResponsiveContainer width="100%" height={160}>
@@ -268,11 +268,11 @@ export default function Dashboard() {
                 <Tooltip contentStyle={{ borderRadius: '12px', border: '1px solid hsl(230,20%,90%)', fontSize: '12px', boxShadow: '0 10px 25px -5px hsl(230 30% 50% / 0.1)' }} />
               </PieChart>
             </ResponsiveContainer>
-            <div className="flex flex-wrap gap-3 mt-2 justify-center">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-1.5 mt-2">
               {amcPieData.map((item, i) => (
-                <div key={item.name} className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
-                  <div className="w-2 h-2 rounded-full" style={{ background: CHART_COLORS[i] }} />
-                  {item.name}
+                <div key={item.name} className="flex items-center gap-1.5 text-[10px] text-muted-foreground min-w-0">
+                  <div className="w-2 h-2 rounded-full shrink-0" style={{ background: CHART_COLORS[i] }} />
+                  <span className="truncate">{item.name}</span>
                 </div>
               ))}
             </div>
@@ -280,15 +280,15 @@ export default function Dashboard() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '600ms' }}>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 opacity-0 animate-fade-in" style={{ animationDelay: '600ms' }}>
         {bottomStats.map(stat => (
-          <div key={stat.label} onClick={() => navigate(stat.link)} className="glass-card p-4 flex items-center gap-3 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer">
-            <div className={`p-2.5 rounded-xl ${stat.bg}`}>
+          <div key={stat.label} onClick={() => navigate(stat.link)} className="glass-card p-3 sm:p-4 flex items-center gap-2.5 sm:gap-3 hover:-translate-y-0.5 transition-all duration-300 cursor-pointer active:scale-[0.98]">
+            <div className={`p-2 sm:p-2.5 rounded-xl ${stat.bg} shrink-0`}>
               <stat.icon size={16} className={stat.color} strokeWidth={2} />
             </div>
-            <div>
-              <p className="text-lg font-bold text-foreground font-display">{stat.value}</p>
-              <p className="text-[11px] text-muted-foreground font-medium">{stat.label}</p>
+            <div className="min-w-0">
+              <p className="text-base sm:text-lg font-bold text-foreground font-display">{stat.value}</p>
+              <p className="text-[10px] sm:text-[11px] text-muted-foreground font-medium truncate">{stat.label}</p>
             </div>
           </div>
         ))}
