@@ -135,19 +135,20 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6 max-w-[1400px] mx-auto">
+    <div className="space-y-4 sm:space-y-6 max-w-[1400px] mx-auto">
       {/* CRITICAL WARRANTY ALERT */}
       {criticalWarranty.length > 0 && (
-        <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-4 animate-fade-in">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-xl bg-destructive/15 animate-pulse">
+        <div className="rounded-2xl border-2 border-destructive/40 bg-destructive/5 p-3 sm:p-4 animate-fade-in">
+          <div className="flex items-center gap-2 sm:gap-3 mb-3">
+            <div className="p-2 rounded-xl bg-destructive/15 animate-pulse shrink-0">
               <Siren size={18} className="text-destructive" />
             </div>
-            <div>
-              <h3 className="text-sm font-bold text-destructive font-display">⚠️ Critical Warranty Alert</h3>
-              <p className="text-[11px] text-destructive/70">These equipment warranties expire in less than 5 days — immediate action required</p>
+            <div className="min-w-0">
+              <h3 className="text-xs sm:text-sm font-bold text-destructive font-display">⚠️ Critical Warranty Alert</h3>
+              <p className="text-[10px] sm:text-[11px] text-destructive/70 hidden sm:block">These equipment warranties expire in less than 5 days — immediate action required</p>
+              <p className="text-[10px] text-destructive/70 sm:hidden">Warranties expire in &lt; 5 days</p>
             </div>
-            <span className="ml-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-2.5 py-1 rounded-full">{criticalWarranty.length} critical</span>
+            <span className="ml-auto text-[10px] font-bold bg-destructive text-destructive-foreground px-2 py-1 rounded-full shrink-0">{criticalWarranty.length}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             {criticalWarranty.map(e => (
@@ -169,12 +170,12 @@ export default function Dashboard() {
         </div>
       )}
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {topCards.map((card, index) => (
           <div
             key={card.label}
             onClick={() => navigate(card.link)}
-            className={`${card.gradient} rounded-2xl p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer opacity-0 animate-fade-in`}
+            className={`${card.gradient} rounded-2xl p-4 sm:p-5 text-white relative overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-xl cursor-pointer opacity-0 animate-fade-in active:scale-[0.98]`}
             style={{ animationDelay: `${index * 100}ms` }}
           >
             <div className="absolute -right-4 -top-4 w-20 h-20 bg-white/10 rounded-full blur-sm" />
@@ -182,14 +183,14 @@ export default function Dashboard() {
 
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-3">
-                <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
-                  <card.icon size={18} strokeWidth={2} />
+                <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center border border-white/20">
+                  <card.icon size={16} strokeWidth={2} />
                 </div>
-                <span className="text-[10px] font-bold bg-white/20 backdrop-blur-sm px-2 py-0.5 rounded-full border border-white/10">{card.trend}</span>
+                <span className="text-[9px] sm:text-[10px] font-bold bg-white/20 backdrop-blur-sm px-1.5 sm:px-2 py-0.5 rounded-full border border-white/10">{card.trend}</span>
               </div>
-              <p className="text-2xl font-extrabold font-display">{card.value}</p>
-              <p className="text-[13px] font-semibold opacity-90 mt-0.5">{card.label}</p>
-              <p className="text-[10px] opacity-60 mt-0.5">{card.subtitle}</p>
+              <p className="text-xl sm:text-2xl font-extrabold font-display">{card.value}</p>
+              <p className="text-xs sm:text-[13px] font-semibold opacity-90 mt-0.5">{card.label}</p>
+              <p className="text-[10px] opacity-60 mt-0.5 truncate">{card.subtitle}</p>
             </div>
           </div>
         ))}
