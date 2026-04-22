@@ -131,7 +131,7 @@ export default function AdminLogin() {
       </div>
 
       {/* RIGHT: Login form */}
-      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-10 bg-white relative lg:overflow-y-auto lg:max-h-screen">
+      <div className="w-full lg:w-[480px] xl:w-[520px] flex flex-col justify-center px-6 sm:px-10 lg:px-12 py-10 pb-28 lg:pb-10 bg-white relative lg:overflow-y-auto lg:max-h-screen">
         {/* Mobile-only logo */}
         <div className="lg:hidden flex items-center justify-center mb-8">
           <img src={clientLogo} alt="Indian Orthocare" className="h-20 w-auto" />
