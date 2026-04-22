@@ -97,13 +97,13 @@ export default function Tickets() {
         </Dialog>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-3">
-        <div className="relative max-w-sm flex-1">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
+        <div className="relative sm:max-w-sm flex-1">
           <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
           <Input placeholder="Search tickets..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
         </div>
         <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-44 rounded-xl"><Filter size={14} className="mr-2" /><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-44 rounded-xl"><Filter size={14} className="mr-2" /><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Statuses</SelectItem>
             {allStatuses.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
