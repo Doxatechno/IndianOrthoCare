@@ -49,10 +49,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <aside 
         className={`
           fixed lg:static inset-y-0 left-0 z-50
-          w-[240px] text-sidebar-foreground
+          w-[260px] sm:w-[240px] max-w-[85vw] text-sidebar-foreground
           transform transition-transform duration-300 ease-in-out
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
-          flex flex-col overflow-hidden
+          flex flex-col overflow-hidden shrink-0
         `}
         style={{ background: 'linear-gradient(180deg, hsl(260, 60%, 30%), hsl(240, 50%, 20%))' }}
       >
@@ -110,34 +110,41 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </aside>
 
       {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Bar */}
-        <header className="h-[68px] bg-card/50 backdrop-blur-xl border-b border-white/30 flex items-center justify-between px-4 lg:px-8 shrink-0 sticky top-0 z-30">
-          <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors">
+        <header className="h-[60px] lg:h-[68px] bg-card/50 backdrop-blur-xl border-b border-white/30 flex items-center justify-between px-3 sm:px-4 lg:px-8 shrink-0 sticky top-0 z-30 gap-2">
+          <div className="flex items-center gap-2 sm:gap-4 min-w-0">
+            <button onClick={() => setSidebarOpen(true)} className="lg:hidden p-2 -ml-1 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary transition-colors active:scale-95">
               <Menu size={20} />
             </button>
-            <div>
-              <h2 className="text-lg font-bold text-foreground font-display">{currentPage}</h2>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-foreground font-display truncate">{currentPage}</h2>
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="hidden sm:flex items-center gap-2 bg-secondary/60 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/30">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <div className="hidden md:flex items-center gap-2 bg-secondary/60 backdrop-blur-sm rounded-xl px-3 py-2 border border-white/30">
               <Search size={15} className="text-muted-foreground" />
               <input placeholder="Search..." className="bg-transparent text-sm outline-none w-32 lg:w-48 placeholder:text-muted-foreground/60" />
             </div>
-            <button className="p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 relative active:scale-95">
+            <button className="p-2 sm:p-2.5 rounded-xl text-muted-foreground hover:text-foreground hover:bg-secondary/60 transition-all duration-200 relative active:scale-95">
               <Bell size={18} />
-              <span className="absolute top-2 right-2 w-2 h-2 bg-destructive rounded-full ring-2 ring-card" />
+              <span className="absolute top-1.5 right-1.5 sm:top-2 sm:right-2 w-2 h-2 bg-destructive rounded-full ring-2 ring-card" />
             </button>
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-[10px] font-bold text-white shadow-md ml-1 cursor-pointer hover:shadow-lg transition-shadow" title={user?.email ?? ''}>
+            <button
+              onClick={handleSignOut}
+              title="Sign out"
+              className="lg:hidden p-2 sm:p-2.5 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all active:scale-95"
+            >
+              <LogOut size={18} />
+            </button>
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br from-purple-400 to-pink-400 flex items-center justify-center text-[10px] font-bold text-white shadow-md ml-0.5 sm:ml-1 cursor-pointer hover:shadow-lg transition-shadow shrink-0" title={user?.email ?? ''}>
               {emailInitials}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6">
           {children}
         </main>
       </div>

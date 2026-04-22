@@ -217,14 +217,14 @@ export default function PMSchedules() {
       )}
 
       {/* Filters + View toggle */}
-      <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center justify-between">
-        <div className="flex flex-col sm:flex-row gap-3 flex-1">
-          <div className="relative max-w-sm flex-1">
+      <div className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between">
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 flex-1">
+          <div className="relative sm:max-w-sm flex-1">
             <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
             <Input placeholder="Search PM schedules..." className="pl-9 rounded-xl" value={search} onChange={e => setSearch(e.target.value)} />
           </div>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 rounded-xl">
+            <SelectTrigger className="w-full sm:w-40 rounded-xl">
               <Filter size={14} className="mr-2" />
               <SelectValue />
             </SelectTrigger>
@@ -235,7 +235,7 @@ export default function PMSchedules() {
           </Select>
         </div>
 
-        <Tabs value={view} onValueChange={v => setView(v as 'kanban' | 'list')} className="shrink-0">
+        <Tabs value={view} onValueChange={v => setView(v as 'kanban' | 'list')} className="shrink-0 self-start sm:self-auto">
           <TabsList className="h-9">
             <TabsTrigger value="kanban" className="text-xs gap-1.5 px-3">
               <LayoutGrid size={14} /> Board

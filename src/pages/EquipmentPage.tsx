@@ -156,8 +156,8 @@ export default function EquipmentPage() {
         </div>
 
         {/* Filter row */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
+        <div className="flex items-center gap-3 overflow-x-auto pb-1 -mx-1 px-1 sm:flex-wrap sm:overflow-visible">
+          <div className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider shrink-0">
             <Filter size={13} />
             Filters
             {activeFilters > 0 && (
@@ -167,7 +167,7 @@ export default function EquipmentPage() {
 
           {/* Customer filter */}
           <Select value={customerFilter} onValueChange={setCustomerFilter}>
-            <SelectTrigger className={`h-8 rounded-xl text-xs w-auto min-w-[180px] gap-2 ${customerFilter !== 'all' ? 'border-primary/50 bg-primary/5' : ''}`}>
+            <SelectTrigger className={`h-8 rounded-xl text-xs w-auto min-w-[160px] gap-2 shrink-0 ${customerFilter !== 'all' ? 'border-primary/50 bg-primary/5' : ''}`}>
               <Building2 size={12} className="text-muted-foreground shrink-0" />
               <SelectValue placeholder="All Customers" />
             </SelectTrigger>
@@ -181,7 +181,7 @@ export default function EquipmentPage() {
 
           {/* Year filter */}
           <Select value={yearFilter} onValueChange={setYearFilter}>
-            <SelectTrigger className={`h-8 rounded-xl text-xs w-auto min-w-[150px] gap-2 ${yearFilter !== 'all' ? 'border-primary/50 bg-primary/5' : ''}`}>
+            <SelectTrigger className={`h-8 rounded-xl text-xs w-auto min-w-[130px] gap-2 shrink-0 ${yearFilter !== 'all' ? 'border-primary/50 bg-primary/5' : ''}`}>
               <Calendar size={12} className="text-muted-foreground shrink-0" />
               <SelectValue placeholder="All Years" />
             </SelectTrigger>
@@ -195,7 +195,7 @@ export default function EquipmentPage() {
 
           {/* Warranty filter */}
           <Select value={warrantyFilter} onValueChange={(v) => setWarrantyFilter(v as WarrantyFilter)}>
-            <SelectTrigger className={`h-8 rounded-xl text-xs w-auto min-w-[160px] gap-2 ${warrantyFilter !== 'all' ? 'border-primary/50 bg-primary/5' : ''}`}>
+            <SelectTrigger className={`h-8 rounded-xl text-xs w-auto min-w-[150px] gap-2 shrink-0 ${warrantyFilter !== 'all' ? 'border-primary/50 bg-primary/5' : ''}`}>
               <Shield size={12} className="text-muted-foreground shrink-0" />
               <SelectValue placeholder="All Warranty" />
             </SelectTrigger>
@@ -211,7 +211,7 @@ export default function EquipmentPage() {
           {activeFilters > 0 && (
             <button
               onClick={clearFilters}
-              className="text-[11px] text-primary font-semibold hover:underline underline-offset-2"
+              className="text-[11px] text-primary font-semibold hover:underline underline-offset-2 shrink-0"
             >
               Clear all
             </button>
