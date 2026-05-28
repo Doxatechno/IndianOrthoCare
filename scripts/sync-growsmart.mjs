@@ -1,33 +1,22 @@
-/**
- * GrowsmartSMB → Supabase Sync Script
- */
-
 import { chromium } from 'playwright';
 import { createClient } from '@supabase/supabase-js';
 
-// ─── Config ─────────────────────────────────────────────────────────────────
 const PORTAL_URL = 'https://ios.growsmartsmb.in/';
 const EMAIL      = process.env.PORTAL_EMAIL;
 const PASSWORD   = process.env.PORTAL_PASSWORD;
-
 const SUPABASE_URL = process.env.SUPABASE_URL || 'https://axjwkwkoksognhxycvvh.supabase.co';
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY;
 
 if (!EMAIL || !PASSWORD) { console.error('❌  Missing PORTAL_EMAIL or PORTAL_PASSWORD'); process.exit(1); }
-if (!SUPABASE_KEY)       { console.error('❌  Missing SUPABASE_SERVICE_KEY');              process.exit(1); }
+if (!SUPABASE_KEY)       { console.error('❌  Missing SUPABASE_SERVICE_KEY'); process.exit(1); }
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function parseDate(str) {
   if (!str || !str.trim()) return null;
   const months = { Jan:1,Feb:2,Mar:3,Apr:4,May:5,Jun:6,Jul:7,Aug:8,Sep:9,Oct:10,Nov:11,Dec:12 };
   const dash = str.match(/^(\d{1,2})-([A-Za-z]{3})-(\d{4})$/);
-  if (dash) {
-    const [,d,m,y] = dash;
-    return `${y}-${String(months[m]).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-  }
+  if (dash) { const [,d,m,y] = dash; return `${y}-${String(months[m]).padStart(2,'0')}-${String(d).padStart(2,'0')}`; }
   const slash = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (slash) { const [,d,m,y] = slash; return `${y}-${m}-${d}`; }
   return null;
@@ -39,27 +28,19 @@ function log(msg) { console.log(`[${new Date().toLocaleTimeString('en-IN')}] ${m
 
 async function login(page) {
   log('🔐 Navigating to portal...');
-
   await page.goto(PORTAL_URL, { waitUntil: 'networkidle', timeout: 45000 });
-  log('  → page loaded (networkidle)');
-
-  // Extra wait for JS frameworks to finish rendering
   await page.waitForTimeout(2000);
 
-  // Debug: show every input on the page
   const inputInfo = await page.evaluate(() =>
     Array.from(document.querySelectorAll('input')).map(i => ({
-      type: i.type, name: i.name, id: i.id,
-      placeholder: i.placeholder,
+      type: i.type, name: i.name, id: i.id, placeholder: i.placeholder,
       visible: i.offsetParent !== null,
     }))
   );
-  log(`  → inputs on page: ${JSON.stringify(inputInfo)}`);
+  log(`  → inputs: ${JSON.stringify(inputInfo)}`);
 
-  // Fill form via JavaScript — bypasses ALL Playwright visibility requirements
   const filled = await page.evaluate(({ email, password }) => {
     const inputs = Array.from(document.querySelectorAll('input'));
-
     const emailInput = inputs.find(i =>
       i.type === 'email' ||
       i.name?.toLowerCase().includes('email') ||
@@ -67,38 +48,25 @@ async function login(page) {
       i.placeholder?.toLowerCase().includes('email') ||
       i.placeholder?.toLowerCase().includes('user') ||
       i.id?.toLowerCase().includes('email') ||
-      i.id?.toLowerCase().includes('user') ||
-      (i.type === 'text' && !i.name?.toLowerCase().includes('pass'))
+      (i.type === 'text')
     );
-
     const passInput = inputs.find(i => i.type === 'password');
-
-    if (!emailInput) return { ok: false, reason: 'no email input found' };
-    if (!passInput)  return { ok: false, reason: 'no password input found' };
-
-    // Set value and trigger React/Vue change events
-    const nativeInputValueSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
-    nativeInputValueSetter.call(emailInput, email);
+    if (!emailInput) return { ok: false, reason: 'no email input' };
+    if (!passInput)  return { ok: false, reason: 'no password input' };
+    const setter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value').set;
+    setter.call(emailInput, email);
     emailInput.dispatchEvent(new Event('input',  { bubbles: true }));
     emailInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-    nativeInputValueSetter.call(passInput, password);
+    setter.call(passInput, password);
     passInput.dispatchEvent(new Event('input',  { bubbles: true }));
     passInput.dispatchEvent(new Event('change', { bubbles: true }));
-
-    return {
-      ok: true,
-      emailField: { type: emailInput.type, name: emailInput.name, id: emailInput.id },
-      passField:  { type: passInput.type,  name: passInput.name,  id: passInput.id  },
-    };
+    return { ok: true, emailField: emailInput.name || emailInput.id || emailInput.type };
   }, { email: EMAIL, password: PASSWORD });
 
-  log(`  → form fill result: ${JSON.stringify(filled)}`);
+  log(`  → fill result: ${JSON.stringify(filled)}`);
   if (!filled.ok) throw new Error(`Form fill failed: ${filled.reason}`);
+  await page.waitForTimeout(400);
 
-  await page.waitForTimeout(500);
-
-  // Submit: try buttons, then Enter key
   const submitted = await page.evaluate(() => {
     const btn =
       document.querySelector('button[type="submit"]') ||
@@ -110,28 +78,62 @@ async function login(page) {
     return null;
   });
 
-  if (submitted) {
-    log(`  → clicked button: "${submitted}"`);
-  } else {
-    log('  → no button found, pressing Enter');
-    await page.keyboard.press('Enter');
-  }
+  if (submitted) { log(`  → clicked: "${submitted}"`); }
+  else           { log('  → pressing Enter'); await page.keyboard.press('Enter'); }
 
-  // Wait for redirect away from login page
   await page.waitForURL(
     url => !url.toString().includes('login') && !url.toString().includes('signin'),
     { timeout: 25000 }
   );
-  log('✅ Logged in successfully');
+  log(`✅ Logged in — now at: ${page.url()}`);
 }
 
 // ─── Sales Orders ─────────────────────────────────────────────────────────────
 
 async function scrapeSalesOrders(page) {
   log('\n📦 Scraping Sales Orders...');
-  await page.goto(`${PORTAL_URL}sales/orders`, { waitUntil: 'networkidle', timeout: 45000 });
-  await page.waitForTimeout(1500);
+  log(`  → post-login URL: ${page.url()}`);
 
+  // Strategy 1: click Sales menu → Sales Orders
+  let onOrdersPage = false;
+  try {
+    await page.click('text=Sales', { timeout: 5000 });
+    await page.waitForTimeout(600);
+    await page.click('text=Sales Orders', { timeout: 5000 });
+    await page.waitForTimeout(1500);
+    log(`  → navigated via menu: ${page.url()}`);
+    onOrdersPage = true;
+  } catch (e) {
+    log(`  → menu click failed (${e.message}), trying direct URLs`);
+  }
+
+  // Strategy 2: try URL patterns
+  if (!onOrdersPage) {
+    const urlsToTry = [
+      `${PORTAL_URL}sales/orders`,
+      `${PORTAL_URL}sales-orders`,
+      `${PORTAL_URL}salesorders`,
+      `${PORTAL_URL}order/list`,
+      `${PORTAL_URL}orders`,
+    ];
+    for (const url of urlsToTry) {
+      try {
+        log(`  → trying: ${url}`);
+        await page.goto(url, { waitUntil: 'networkidle', timeout: 20000 });
+        const tables = await page.locator('table').count();
+        log(`  → found ${tables} table(s) at ${page.url()}`);
+        if (tables > 0) { onOrdersPage = true; break; }
+      } catch { continue; }
+    }
+  }
+
+  // Screenshot regardless — uploaded as artifact, helps debug
+  await page.screenshot({ path: 'debug-sales-page.png', fullPage: false });
+  log(`  → screenshot saved (title: "${await page.title()}", url: ${page.url()})`);
+
+  if (!onOrdersPage) throw new Error('Could not navigate to Sales Orders page — see debug-sales-page.png artifact');
+
+  // Try to set 500 rows per page
   try {
     const btn500 = page.locator('button:has-text("500"), a:has-text("500")').first();
     if (await btn500.isVisible({ timeout: 3000 })) {
@@ -144,7 +146,9 @@ async function scrapeSalesOrders(page) {
   let pageNum = 1;
 
   while (true) {
-    log(`  → Page ${pageNum}`);
+    log(`  → scraping page ${pageNum}...`);
+
+    // Retry table load 3 times
     let tableLoaded = false;
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
@@ -152,14 +156,17 @@ async function scrapeSalesOrders(page) {
         tableLoaded = true;
         break;
       } catch {
-        log(`  ⚠️  Table not visible (attempt ${attempt}/3), reloading...`);
+        log(`  ⚠️  Table not loaded (attempt ${attempt}/3)`);
         if (attempt < 3) {
           await page.reload({ waitUntil: 'networkidle' });
-          await page.waitForTimeout(2000 * attempt);
+          await page.waitForTimeout(3000 * attempt);
         }
       }
     }
-    if (!tableLoaded) throw new Error('Sales orders table not found after 3 attempts');
+    if (!tableLoaded) {
+      await page.screenshot({ path: `debug-table-fail-p${pageNum}.png` });
+      throw new Error(`Table not found on page ${pageNum} after 3 attempts — check artifact screenshots`);
+    }
 
     const rows = await page.evaluate(() =>
       Array.from(document.querySelectorAll('table tbody tr')).map(row => {
@@ -178,6 +185,7 @@ async function scrapeSalesOrders(page) {
       }).filter(r => r.order_no && r.order_no.startsWith('SO-'))
     );
 
+    log(`  → page ${pageNum}: ${rows.length} orders`);
     allOrders.push(...rows);
 
     const nextBtn = page.locator('.pagination a:has-text("›"), a[aria-label="Next page"], button[aria-label="Next"]').first();
@@ -191,7 +199,7 @@ async function scrapeSalesOrders(page) {
     pageNum++;
   }
 
-  log(`  ✅ ${allOrders.length} sales orders scraped`);
+  log(`  ✅ ${allOrders.length} total sales orders`);
   return allOrders;
 }
 
@@ -201,16 +209,14 @@ async function scrapeCustomers(page) {
   log('\n👥 Scraping Customers...');
   const urls = [`${PORTAL_URL}customers`, `${PORTAL_URL}contacts`, `${PORTAL_URL}crm/customers`];
   let found = false;
-
   for (const url of urls) {
     try {
       await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
-      await page.waitForSelector('table', { timeout: 6000 });
+      await page.waitForSelector('table', { timeout: 8000 });
       found = true; break;
     } catch { continue; }
   }
-
-  if (!found) { log('  ⚠️  Could not locate customers page — skipping'); return []; }
+  if (!found) { log('  ⚠️  Customers page not found — skipping'); return []; }
 
   try {
     const btn500 = page.locator('button:has-text("500"), a:has-text("500")').first();
@@ -219,11 +225,9 @@ async function scrapeCustomers(page) {
 
   const allCustomers = [];
   let pageNum = 1;
-
   while (true) {
-    log(`  → Page ${pageNum}`);
-    await page.waitForSelector('table tbody tr', { timeout: 10000 });
-
+    log(`  → page ${pageNum}`);
+    await page.waitForSelector('table tbody tr', { timeout: 20000 });
     const rows = await page.evaluate(() =>
       Array.from(document.querySelectorAll('table tbody tr')).map(row => {
         const c = row.querySelectorAll('td');
@@ -237,9 +241,7 @@ async function scrapeCustomers(page) {
         };
       }).filter(r => r.name)
     );
-
     allCustomers.push(...rows);
-
     const nextBtn = page.locator('.pagination a:has-text("›"), a[aria-label="Next page"]').first();
     const done = await nextBtn.evaluate(
       el => el.classList.contains('disabled') || el.closest('li')?.classList.contains('disabled'),
@@ -250,8 +252,7 @@ async function scrapeCustomers(page) {
     await page.waitForTimeout(1000);
     pageNum++;
   }
-
-  log(`  ✅ ${allCustomers.length} customers scraped`);
+  log(`  ✅ ${allCustomers.length} customers`);
   return allCustomers;
 }
 
@@ -261,16 +262,13 @@ async function syncSalesOrders(orders) {
   if (!orders.length) return;
   log(`\n💾 Upserting ${orders.length} sales orders...`);
   const records = orders.map(o => ({
-    id:            o.order_no,
-    portal_id:     o.portal_id || '',
+    id: o.order_no, portal_id: o.portal_id || '',
     customer_name: o.customer_name || '',
-    order_date:    parseDate(o.order_date),
-    delivery_date: parseDate(o.delivery_date),
-    status:        o.status || '',
-    delivery_for:  o.delivery_for || '',
+    order_date: parseDate(o.order_date), delivery_date: parseDate(o.delivery_date),
+    status: o.status || '', delivery_for: o.delivery_for || '',
     delivered_pct: parseFloat(o.delivered_pct) || 0,
-    invoiced_pct:  parseFloat(o.invoiced_pct) || 0,
-    synced_at:     new Date().toISOString(),
+    invoiced_pct:  parseFloat(o.invoiced_pct)  || 0,
+    synced_at: new Date().toISOString(),
   }));
   for (let i = 0; i < records.length; i += 200) {
     const chunk = records.slice(i, i + 200);
@@ -284,12 +282,9 @@ async function syncCustomers(customers) {
   if (!customers.length) return;
   log(`\n💾 Upserting ${customers.length} customers...`);
   const records = customers.filter(c => c.name).map((c, idx) => ({
-    id:             c.portal_id ? `GSM-${c.portal_id}` : `GSM-${idx}`,
-    name:           c.name,
-    contact_person: c.contact_person || '',
-    phone:          c.phone || '',
-    email:          c.email || '',
-    address:        c.address || '',
+    id: c.portal_id ? `GSM-${c.portal_id}` : `GSM-${idx}`,
+    name: c.name, contact_person: c.contact_person || '',
+    phone: c.phone || '', email: c.email || '', address: c.address || '',
   }));
   for (let i = 0; i < records.length; i += 200) {
     const chunk = records.slice(i, i + 200);
@@ -302,15 +297,11 @@ async function syncCustomers(customers) {
 async function logSyncRun({ ordersCount, customerCount, status, errorMsg }) {
   try {
     await supabase.from('sync_log').insert({
-      synced_at:      new Date().toISOString(),
-      orders_count:   ordersCount,
-      customer_count: customerCount,
-      status,
-      error_msg:      errorMsg || null,
+      synced_at: new Date().toISOString(),
+      orders_count: ordersCount, customer_count: customerCount,
+      status, error_msg: errorMsg || null,
     });
-  } catch (e) {
-    console.error('  ⚠️  Could not write to sync_log:', e.message);
-  }
+  } catch (e) { console.error('  ⚠️  sync_log write failed:', e.message); }
 }
 
 // ─── Main ─────────────────────────────────────────────────────────────────────
