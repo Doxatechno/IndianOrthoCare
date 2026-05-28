@@ -311,14 +311,15 @@ async function fetchSalesOrdersData(page) {
           if (text && (text.startsWith('{') || text.startsWith('['))) {
             const json = JSON.parse(text);
             captured.push({ url, status, data: json, size: text.length });
-            debug(`Captured JSON: ${text.slice(0, 100)}...`);
+            // Note: debug() cannot be called here as this is async and in a different context
+            if (DEBUG_MODE) console.log(`[DEBUG] Captured JSON: ${text.slice(0, 100)}...`);
           }
         } catch (parseErr) {
-          debug(`Failed to parse response: ${parseErr.message}`);
+          if (DEBUG_MODE) console.log(`[DEBUG] Failed to parse response: ${parseErr.message}`);
         }
       }
     } catch (err) {
-      debug(`Response handler error: ${err.message}`);
+      if (DEBUG_MODE) console.log(`[DEBUG] Response handler error: ${err.message}`);
     }
   });
 
