@@ -129,7 +129,8 @@ async function login(page) {
 
 async function scrapeSalesOrders(page) {
   log('\n📦 Scraping Sales Orders...');
-  await page.goto(`${PORTAL_URL}sales/orders`, { waitUntil: 'domcontentloaded', timeout: 20000 });
+  await page.goto(`${PORTAL_URL}sales/orders`, { waitUntil: 'networkidle', timeout: 45000 });
+  await page.waitForTimeout(1500);
 
   try {
     const btn500 = page.locator('button:has-text("500"), a:has-text("500")').first();
@@ -144,7 +145,21 @@ async function scrapeSalesOrders(page) {
 
   while (true) {
     log(`  → Page ${pageNum}`);
-    await page.waitForSelector('table tbody tr', { timeout: 15000 });
+    let tableLoaded = false;
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await page.waitForSelector('table tbody tr', { timeout: 30000 });
+        tableLoaded = true;
+        break;
+      } catch {
+        log(`  ⚠️  Table not visible (attempt ${attempt}/3), reloading...`);
+        if (attempt < 3) {
+          await page.reload({ waitUntil: 'networkidle' });
+          await page.waitForTimeout(2000 * attempt);
+        }
+      }
+    }
+    if (!tableLoaded) throw new Error('Sales orders table not found after 3 attempts');
 
     const rows = await page.evaluate(() =>
       Array.from(document.querySelectorAll('table tbody tr')).map(row => {
@@ -189,7 +204,7 @@ async function scrapeCustomers(page) {
 
   for (const url of urls) {
     try {
-      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 12000 });
+      await page.goto(url, { waitUntil: 'networkidle', timeout: 30000 });
       await page.waitForSelector('table', { timeout: 6000 });
       found = true; break;
     } catch { continue; }
@@ -319,6 +334,7 @@ async function main() {
       viewport: { width: 1366, height: 768 },
     });
     const page = await context.newPage();
+    page.setDefaultTimeout(45000);
 
     await login(page);
     orders    = await scrapeSalesOrders(page);
