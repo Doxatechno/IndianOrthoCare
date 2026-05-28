@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { useData } from '@/context/DataContext';
 import StatusBadge from '@/components/StatusBadge';
+import SalesOrdersWidget from '@/components/SalesOrdersWidget';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const ticketStatusData = [
@@ -170,7 +171,10 @@ export default function Dashboard() {
         </div>
       )}
 
+      <SalesOrdersWidget />
+
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+
         {topCards.map((card, index) => (
           <div
             key={card.label}
