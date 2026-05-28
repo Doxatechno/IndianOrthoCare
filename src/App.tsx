@@ -19,6 +19,7 @@ import AdminLogin from "@/pages/AdminLogin";
 import TechProtectedRoute from "@/components/TechProtectedRoute";
 import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import RaiseTicket from "@/pages/RaiseTicket";
+import SalesOrders from "@/pages/SalesOrders";
 import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
@@ -60,6 +61,7 @@ const App = () => (
                 <Route path="/amc" element={<AMCContracts />} />
                 <Route path="/pm-schedules" element={<PMSchedules />} />
                 <Route path="/technicians" element={<Technicians />} />
+                <Route path="/sales-orders" element={<SalesOrders />} />
                 <Route path="*" element={<NotFound />} />
               </Route>
             </Routes>

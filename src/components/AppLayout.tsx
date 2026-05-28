@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { 
   LayoutDashboard, Users, Cpu, ClipboardList, Shield, CalendarCheck, 
-  Menu, X, ChevronRight, Bell, Search, LogOut, Wrench
+  Menu, X, ChevronRight, Bell, Search, LogOut, Wrench, ShoppingCart
 } from 'lucide-react';
 import clientLogo from '@/assets/client-logo.svg';
 
@@ -13,6 +13,7 @@ const navItems = [
   { path: '/amc', label: 'AMC Contracts', icon: Shield },
   { path: '/pm-schedules', label: 'PM Schedules', icon: CalendarCheck },
   { path: '/tickets', label: 'Tickets', icon: ClipboardList },
+  { path: '/sales-orders', label: 'Sales Orders', icon: ShoppingCart },
   { path: '/customers', label: 'Customers', icon: Users },
   { path: '/technicians', label: 'Technicians', icon: Wrench },
 ];
