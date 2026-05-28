@@ -198,6 +198,111 @@ export type Database = {
           },
         ]
       }
+      products: {
+        Row: {
+          category: string
+          id: string
+          model_number: string
+          name: string
+          stock_qty: number | null
+          synced_at: string
+          unit_price: number | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          id: string
+          model_number?: string
+          name?: string
+          stock_qty?: number | null
+          synced_at?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          id?: string
+          model_number?: string
+          name?: string
+          stock_qty?: number | null
+          synced_at?: string
+          unit_price?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sales_orders: {
+        Row: {
+          customer_name: string
+          delivered_pct: number | null
+          delivery_date: string | null
+          delivery_for: string
+          id: string
+          invoiced_pct: number | null
+          order_date: string | null
+          portal_id: string | null
+          status: string
+          synced_at: string
+          updated_at: string
+        }
+        Insert: {
+          customer_name?: string
+          delivered_pct?: number | null
+          delivery_date?: string | null
+          delivery_for?: string
+          id: string
+          invoiced_pct?: number | null
+          order_date?: string | null
+          portal_id?: string | null
+          status?: string
+          synced_at?: string
+          updated_at?: string
+        }
+        Update: {
+          customer_name?: string
+          delivered_pct?: number | null
+          delivery_date?: string | null
+          delivery_for?: string
+          id?: string
+          invoiced_pct?: number | null
+          order_date?: string | null
+          portal_id?: string | null
+          status?: string
+          synced_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      sync_log: {
+        Row: {
+          customer_count: number | null
+          error_msg: string | null
+          id: number
+          orders_count: number | null
+          product_count: number | null
+          status: string
+          synced_at: string
+        }
+        Insert: {
+          customer_count?: number | null
+          error_msg?: string | null
+          id?: number
+          orders_count?: number | null
+          product_count?: number | null
+          status?: string
+          synced_at?: string
+        }
+        Update: {
+          customer_count?: number | null
+          error_msg?: string | null
+          id?: number
+          orders_count?: number | null
+          product_count?: number | null
+          status?: string
+          synced_at?: string
+        }
+        Relationships: []
+      }
       technicians: {
         Row: {
           created_at: string
