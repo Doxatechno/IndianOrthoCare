@@ -16,7 +16,7 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
-// ─── Config ──────────────────────────────────────────────────────────────
+// ─── Config ──────────────────────────────────────────────────────────
 const PORTAL_URL = 'https://ios.growsmartsmb.in/';
 const EMAIL      = process.env.PORTAL_EMAIL;
 const PASSWORD   = process.env.PORTAL_PASSWORD;
@@ -42,7 +42,7 @@ if (!SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ─── Helpers ──────────────────────────────────────────────────────────────
+// ─── Helpers ──────────────────────────────────────────────────────────
 
 /** Convert "15-May-2026" or "15/05/2026" → "2026-05-15" */
 function parseDate(str) {
@@ -65,7 +65,7 @@ function log(msg) {
   console.log(`[${new Date().toLocaleTimeString('en-IN')}] ${msg}`);
 }
 
-// ─── Login ────────────────────────────────────────────────────────────────
+// ─── Login ───────────────────────────────────────────────────────────
 
 async function login(page) {
   log('🔐 Navigating to portal...');
@@ -128,9 +128,16 @@ async function login(page) {
   ).first();
 
   try {
-    await loginBtn.scroll({ timeout: 5000 });
-    await loginBtn.click({ timeout: 60000 });
-    log('✅ Login button clicked');
+    // Check if element exists before scrolling
+    const isVisible = await loginBtn.isVisible({ timeout: 5000 }).catch(() => false);
+    
+    if (isVisible) {
+      await loginBtn.scroll({ timeout: 5000 });
+      await loginBtn.click({ timeout: 60000 });
+      log('✅ Login button clicked');
+    } else {
+      throw new Error('Login button not visible or not found');
+    }
   } catch (err) {
     log('❌ Could not click login button - timeout or not found');
     
@@ -162,7 +169,7 @@ async function login(page) {
   }
 }
 
-// ─── Sales Orders ─────────────────────────────────────────────────────────
+// ─── Sales Orders ────────────────────────────────────────────────────────
 
 async function scrapeSalesOrders(page) {
   log('\n📦 Scraping Sales Orders...');
@@ -254,7 +261,7 @@ async function scrapeSalesOrders(page) {
   return allOrders;
 }
 
-// ─── Customers ────────────────────────────────────────────────────────────
+// ─── Customers ─────────────────────────────────────────────────────────
 
 async function scrapeCustomers(page) {
   log('\n👥 Scraping Customers...');
@@ -424,7 +431,7 @@ async function logSyncRun({ ordersCount, customerCount, status, errorMsg }) {
   }).catch(() => {});
 }
 
-// ─── Main ──────────────────────────────────────────────────────────────────
+// ─── Main ───────────────────────────────────────────────────────────
 
 async function main() {
   const start = Date.now();
