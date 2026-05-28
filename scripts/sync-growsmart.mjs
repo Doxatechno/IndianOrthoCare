@@ -32,7 +32,7 @@ function parseDate(str) {
 
 async function login(page) {
   log('🔐 Logging in...');
-  await page.goto(`${PORTAL_URL}/`, { waitUntil: 'networkidle', timeout: 45000 });
+  await page.goto(`${PORTAL_URL}/spa`, { waitUntil: 'networkidle', timeout: 45000 });
   await page.waitForTimeout(2000);
 
   await page.evaluate(({ email, password }) => {
@@ -52,7 +52,11 @@ async function login(page) {
     if (btn) btn.click(); else document.querySelector('input[type="password"]')?.form?.submit();
   });
 
-  await page.waitForURL(url => !/login|signin/i.test(url.toString()), { timeout: 25000 });
+  // Wait for SPA to move away from login — hash changes from #/login to #/dashboard or similar
+  await page.waitForFunction(
+    () => !window.location.href.includes('login') && !window.location.href.includes('signin'),
+    { timeout: 25000 }
+  );
   log(`✅ Logged in — at: ${page.url()}`);
 }
 
