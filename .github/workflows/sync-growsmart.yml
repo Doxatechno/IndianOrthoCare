@@ -1,54 +1,45 @@
 name: Sync GrowsmartSMB → Supabase
 
 on:
-  # Run automatically every 6 hours (IST-friendly times)
   schedule:
     - cron: '0 */6 * * *'
-
-  # Also allow running manually from GitHub UI (Actions tab → Run workflow)
   workflow_dispatch:
 
 jobs:
   sync:
     name: Scrape & Sync
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
 
     steps:
-      # ── 1. Checkout code ──────────────────────────────────────────────────
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # ── 2. Set up Bun ─────────────────────────────────────────────────────
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
         with:
           bun-version: latest
 
-      # ── 3. Install project dependencies ──────────────────────────────────
       - name: Install dependencies
         run: bun install
 
-      # ── 4. Install Playwright Chromium browser ────────────────────────────
       - name: Install Playwright Chromium
         run: bunx playwright install chromium --with-deps
 
-      # ── 5. Run the scraper ────────────────────────────────────────────────
       - name: Run GrowsmartSMB sync
         env:
-          PORTAL_EMAIL:        ${{ secrets.PORTAL_EMAIL }}
-          PORTAL_PASSWORD:     ${{ secrets.PORTAL_PASSWORD }}
-          SUPABASE_URL:        ${{ secrets.SUPABASE_URL }}
+          PORTAL_EMAIL:         ${{ secrets.PORTAL_EMAIL }}
+          PORTAL_PASSWORD:      ${{ secrets.PORTAL_PASSWORD }}
+          SUPABASE_URL:         ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
         run: node scripts/sync-growsmart.mjs
 
-      # ── 6. Upload screenshots on failure (helps debug) ────────────────────
-      - name: Upload failure screenshots
-        if: failure()
+      # Always upload screenshots so we can debug even on success
+      - name: Upload debug screenshots
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: sync-failure-screenshots
-          path: |
-            *.png
-            screenshots/
+          name: debug-screenshots
+          path: debug-*.png
           retention-days: 3
+          if-no-files-found: ignore
