@@ -17,9 +17,9 @@ import { createClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // CONFIG
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 const PORTAL_URL = 'https://ios.growsmartsmb.in';
 const EMAIL = process.env.PORTAL_EMAIL;
@@ -44,9 +44,9 @@ if (!SUPABASE_KEY) {
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // LOGGING & UTILITIES
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 function log(msg) {
   console.log(`[${new Date().toLocaleTimeString('en-IN')}] ${msg}`);
@@ -89,9 +89,9 @@ async function retry(fn, maxAttempts = 3, delayMs = 1000) {
   throw lastError;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // BROWSER & SESSION MANAGEMENT
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 async function createBrowserContext() {
   const browser = await chromium.launch({
@@ -162,9 +162,9 @@ async function saveBrowserSession(context) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // AUTHENTICATION
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 async function checkAuthState(page) {
   const state = await page.evaluate(() => ({
@@ -218,7 +218,7 @@ async function login(page) {
       emailInput.dispatchEvent(new Event('input', { bubbles: true }));
       emailInput.dispatchEvent(new Event('change', { bubbles: true }));
       emailInput.dispatchEvent(new Event('blur', { bubbles: true }));
-      debug(`Set email field`);
+      console.log(`[Browser] Set email field`);
     }
   }, { email: EMAIL });
 
@@ -234,7 +234,7 @@ async function login(page) {
       passInput.dispatchEvent(new Event('input', { bubbles: true }));
       passInput.dispatchEvent(new Event('change', { bubbles: true }));
       passInput.dispatchEvent(new Event('blur', { bubbles: true }));
-      debug(`Set password field`);
+      console.log(`[Browser] Set password field`);
     }
   }, { password: PASSWORD });
 
@@ -248,10 +248,10 @@ async function login(page) {
       Array.from(document.querySelectorAll('button')).find(b => /login|sign in/i.test(b.textContent));
 
     if (btn) {
-      debug('Clicking login button');
+      console.log('[Browser] Clicking login button');
       btn.click();
     } else {
-      debug('No button found, trying form submit');
+      console.log('[Browser] No button found, trying form submit');
       document.querySelector('input[type="password"]')?.form?.submit();
     }
   });
@@ -277,9 +277,9 @@ async function login(page) {
   return true;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // DATA FETCHING WITH NETWORK INTERCEPTION
-// ──────────────────────────���──────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 async function fetchSalesOrdersData(page) {
   log('\n📦 Loading sales orders page...');
@@ -383,9 +383,9 @@ async function fetchSalesOrdersData(page) {
   return captured;
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // DATA EXTRACTION & PARSING
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 function extractOrders(captured) {
   if (captured.length === 0) {
@@ -465,9 +465,9 @@ function extractOrders(captured) {
   return [];
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // DATA NORMALIZATION
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 function normalise(raw) {
   const g = (...keys) => {
@@ -496,9 +496,9 @@ function normalise(raw) {
   };
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // SUPABASE SYNC
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 async function syncToSupabase(orders) {
   if (!orders.length) {
@@ -547,9 +547,9 @@ async function writeSyncLog(ordersCount, status, errorMsg) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 // MAIN
-// ─────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────[...]
 
 async function main() {
   const t0 = Date.now();
