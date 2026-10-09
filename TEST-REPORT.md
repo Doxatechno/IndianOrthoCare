@@ -8,6 +8,54 @@
 
 ---
 
+## 0. Remediation status
+
+All eleven items in §9 were implemented and verified after this report was first written.
+Commits `07bc82d`..`f6ccbef` on `claude/confident-goldberg-oorfxc`.
+
+| § | Defect | Status | Commit |
+|---|---|---|---|
+| 3 | Technician portal could never show assigned work | **Fixed** — writes/reads/RLS all key on `technicians.id`; FKs added; existing rows migrated | `07bc82d` |
+| 4 | `bootstrap-default-users` publicly callable with service-role key | **Removed from the repo** — still needs deleting from the Supabase project, see below | `db056cb` |
+| 5 | App re-seeded 84 demo rows into an empty database | **Fixed** — `seedIfEmpty` and the mock arrays are gone; load failures surface instead | `54968fc` |
+| 6.1 | `create-technician-user` never granted the `technician` role | **Fixed** — grants the role, requires an admin caller, unwinds on failure; backfill migration | `f10560c` |
+| 6.2 | Anon read all customer PII, equipment and sales orders | **Fixed** — narrow `get_equipment_for_qr`; blanket policies dropped; sales data admin-only | `f438b65` |
+| 6.3 / 18 | Public QR form broken after the first ticket; racy client ids | **Fixed** — ids from sequences, `create_ticket_from_qr` allocates server-side | `d655552` |
+| 8 / 13 | Anon could forge tickets; functions had no admin gate | **Fixed** — anon INSERT policy dropped; status/assignee set server-side; admin checks added | `d655552`, `f10560c` |
+| 6.4 | Opening `/amc` created contracts and reloaded the page | **Fixed** — explicit confirmed action, `refreshData()`, zero-price guard | `728bb7d` |
+| 9 | Data-wiping migration | **Fixed, severity corrected** — trailing migration is now a documented no-op | `debc517` |
+| 10 | Tracked `.env` | **Fixed, severity corrected** — untracked and ignored; **no key rotation needed** | `b99bdb8` |
+| 11 / 12 | Denied writes looked like successes; login dead-ended | **Fixed** — zero-row updates throw and are shown; no-role logins are told why | `91e4440` |
+| 16 | No usable test suite | **Fixed** — 44 RLS assertions, 26 source invariants, 13 route-guard specs; lint 45 → 0 | `f6ccbef` |
+
+Verification after the changes: typecheck clean, lint **0 problems** (was 45), 27 Vitest tests pass,
+13 Playwright specs pass, **44/44 authorization assertions pass** on a database built purely from the
+migration chain, production build clean. The SQL suite was confirmed to actually fail (exit 3) when the
+assignment FK is dropped and an open anon policy is reintroduced.
+
+Two findings in this report were **corrected downward** during remediation, after I verified them
+properly rather than relying on my first reading — finding 10 (the committed keys are publishable/anon
+keys, public by design; nothing needs rotating) and finding 9 (five such migrations exist, not one, but
+the net effect on a fresh database is the intended one). Both are marked inline.
+
+### Still to be done outside this repository
+
+These cannot be done from a commit, and the first two matter most:
+
+1. **Delete `bootstrap-default-users` from the Supabase project.** Removing it from the repo does not
+   undeploy it. Until it is deleted, the unauthenticated admin-creation and password-reset path is live.
+2. **Rotate the admin password, then audit `auth.users` and `user_roles`** for accounts you did not
+   create.
+3. **Apply the four new migrations** (`20261009120000`–`20261009123000`) and **redeploy
+   `create-technician-user`**.
+4. **Purge any demo rows** the old seeder already wrote (the 7 customers / 52 equipment / 5 tickets /
+   8 AMCs / 12 PMs with `.gov.in` contacts).
+5. **Re-run `supabase gen types typescript`** and delete `src/integrations/supabase/untyped.ts`.
+6. If you want this suite re-run against the live project, allow `axjwkwkoksognhxycvvh.supabase.co`
+   in the environment's network settings.
+
+---
+
 ## 1. Verdict
 
 **Not production-ready.** The build is clean and the admin console works well, but four defects break core
