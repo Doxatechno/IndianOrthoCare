@@ -109,7 +109,12 @@ export default function Technicians() {
           technicianId: credForm.techId,
         },
       });
-      if (error) throw error;
+      // A non-2xx response surfaces as a FunctionsHttpError whose message is
+      // generic, so read the real reason out of the response body.
+      if (error) {
+        const body = await (error as any)?.context?.json?.().catch(() => null);
+        throw new Error(body?.error ?? error.message);
+      }
       if (data?.error) throw new Error(data.error);
       toast.success(`Login created for ${credForm.techName}`);
       setCredDialogOpen(false);
