@@ -1,5 +1,18 @@
-DELETE FROM public.tickets;
-DELETE FROM public.pm_schedules;
-DELETE FROM public.amc_contracts;
-DELETE FROM public.equipment;
-DELETE FROM public.customers;
+-- Intentionally a no-op.
+--
+-- This migration previously contained five unguarded statements:
+--
+--   DELETE FROM public.tickets;
+--   DELETE FROM public.pm_schedules;
+--   DELETE FROM public.amc_contracts;
+--   DELETE FROM public.equipment;
+--   DELETE FROM public.customers;
+--
+-- It was a one-off cleanup to clear demo rows, but living in migrations/ it
+-- would run again on every fresh environment, preview branch and
+-- `supabase db reset`, wiping real business data each time.
+--
+-- The file is kept (rather than deleted) so the recorded migration history
+-- stays consistent for environments where it has already been applied.
+-- One-off data cleanups belong in a script that someone runs deliberately,
+-- not in the migration chain.
