@@ -50,7 +50,7 @@ export default function PMSchedules() {
   const workloadMap = useMemo(() => {
     const map: Record<string, number> = {};
     activeTechs.forEach(tech => {
-      map[tech.id] = data.filter(p => p.assignedTechnician === tech.name && p.status !== 'Completed').length;
+      map[tech.id] = data.filter(p => p.assignedTechnician === tech.id && p.status !== 'Completed').length;
     });
     return map;
   }, [activeTechs, data]);
@@ -86,7 +86,7 @@ export default function PMSchedules() {
     // Build workload tracker
     const load: Record<string, number> = {};
     activeTechs.forEach(t => {
-      load[t.id] = data.filter(p => p.assignedTechnician === t.name && p.status !== 'Completed').length;
+      load[t.id] = data.filter(p => p.assignedTechnician === t.id && p.status !== 'Completed').length;
     });
 
     let assignedCount = 0;
@@ -95,7 +95,7 @@ export default function PMSchedules() {
       const sorted = activeTechs.slice().sort((a, b) => (load[a.id] ?? 0) - (load[b.id] ?? 0));
       const tech = sorted[0];
       try {
-        await updatePMSchedule(pm.id, { assignedTechnician: tech.name, status: 'Assigned' });
+        await updatePMSchedule(pm.id, { assignedTechnician: tech.id, status: 'Assigned' });
         load[tech.id] = (load[tech.id] ?? 0) + 1;
         assignedCount++;
       } catch (err) {
@@ -180,7 +180,7 @@ export default function PMSchedules() {
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-2">
               {activeTechs.map(tech => {
                 const pending = workloadMap[tech.id] ?? 0;
-                const done = data.filter(p => p.assignedTechnician === tech.name && p.status === 'Completed').length;
+                const done = data.filter(p => p.assignedTechnician === tech.id && p.status === 'Completed').length;
                 const isOverloaded = pending >= 5;
                 const isHigh = pending >= 3;
                 return (

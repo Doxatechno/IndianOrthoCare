@@ -35,6 +35,11 @@ interface DataContextType {
   amcContracts: AMCContract[];
   pmSchedules: PMSchedule[];
   technicians: Technician[];
+  /**
+   * Resolve a technician id (the value stored in `tickets.assigned_technician`
+   * and `pm_schedules.assigned_technician`) to a display name.
+   */
+  technicianName: (id: string | null | undefined) => string;
   addCustomer: (input: CustomerInput) => Promise<void>;
   updateCustomer: (id: string, input: CustomerInput) => Promise<void>;
   addEquipment: (input: EquipmentInput) => Promise<void>;
@@ -675,6 +680,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTechnicians(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
+  const technicianNames = useMemo(
+    () => new Map(technicians.map(t => [t.id, t.name])),
+    [technicians],
+  );
+
+  const technicianName = useCallback(
+    (id: string | null | undefined) => (id ? technicianNames.get(id) ?? id : ''),
+    [technicianNames],
+  );
+
   const value = useMemo(
     () => ({
       loading,
@@ -684,6 +699,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       amcContracts,
       pmSchedules,
       technicians,
+      technicianName,
       addCustomer,
       updateCustomer,
       addEquipment,
@@ -704,6 +720,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       amcContracts,
       pmSchedules,
       technicians,
+      technicianName,
       addCustomer,
       updateCustomer,
       addEquipment,

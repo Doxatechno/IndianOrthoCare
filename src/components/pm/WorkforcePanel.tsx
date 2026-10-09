@@ -20,8 +20,8 @@ export default function WorkforcePanel({ technicians, pmSchedules }: WorkforcePa
 
     const activeTechs = technicians.filter(t => t.isActive);
     const workload = activeTechs.map(tech => {
-      const pending = pmSchedules.filter(p => p.assignedTechnician === tech.name && p.status !== 'Completed').length;
-      const done = pmSchedules.filter(p => p.assignedTechnician === tech.name && p.status === 'Completed').length;
+      const pending = pmSchedules.filter(p => p.assignedTechnician === tech.id && p.status !== 'Completed').length;
+      const done = pmSchedules.filter(p => p.assignedTechnician === tech.id && p.status === 'Completed').length;
       return { ...tech, pending, done, total: pending + done };
     }).sort((a, b) => b.pending - a.pending);
 

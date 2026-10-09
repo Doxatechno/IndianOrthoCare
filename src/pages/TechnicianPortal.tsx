@@ -38,12 +38,12 @@ export default function TechnicianPortal() {
   const selectedTech = technicians.find(t => t.id === technicianId);
 
   const myTickets = useMemo(
-    () => tickets.filter(t => t.assignedTechnician === selectedTech?.name),
+    () => tickets.filter(t => t.assignedTechnician === technicianId),
     [tickets, selectedTech]
   );
 
   const myPMs = useMemo(
-    () => pmSchedules.filter(p => p.assignedTechnician === selectedTech?.name),
+    () => pmSchedules.filter(p => p.assignedTechnician === technicianId),
     [pmSchedules, selectedTech]
   );
 

@@ -64,7 +64,7 @@ export default function PMListView({ pmSchedules, technicians, onAssign, onStatu
                         </SelectTrigger>
                         <SelectContent>
                           {technicians.filter(t => t.isActive && (t.role === 'Service Engineer' || t.role === 'Sales and Service Engineer')).map(t => (
-                            <SelectItem key={t.id} value={t.name}>
+                            <SelectItem key={t.id} value={t.id}>
                               {t.name} ({workloadMap[t.id] ?? 0} active)
                             </SelectItem>
                           ))}
@@ -120,7 +120,7 @@ export default function PMListView({ pmSchedules, technicians, onAssign, onStatu
                   </SelectTrigger>
                   <SelectContent>
                     {technicians.filter(t => t.isActive && (t.role === 'Service Engineer' || t.role === 'Sales and Service Engineer')).map(t => (
-                      <SelectItem key={t.id} value={t.name}>
+                      <SelectItem key={t.id} value={t.id}>
                         {t.name} ({workloadMap[t.id] ?? 0})
                       </SelectItem>
                     ))}

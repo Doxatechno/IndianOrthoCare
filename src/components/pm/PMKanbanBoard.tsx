@@ -63,7 +63,7 @@ function PMCard({ pm, technicians, onAssign, onStatusChange, workloadMap }: {
         </SelectTrigger>
         <SelectContent>
           {technicians.filter(t => t.isActive && (t.role === 'Service Engineer' || t.role === 'Sales and Service Engineer')).map(t => (
-            <SelectItem key={t.id} value={t.name} className="text-xs">
+            <SelectItem key={t.id} value={t.id} className="text-xs">
               <span className="flex items-center gap-2">
                 {t.name}
                 <span className="text-muted-foreground">({workloadMap[t.id] ?? 0} active)</span>

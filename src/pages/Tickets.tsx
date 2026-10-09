@@ -13,7 +13,7 @@ import StatusBadge from '@/components/StatusBadge';
 const allStatuses: TicketStatus[] = ['Pending', 'Assigned', 'In Progress', 'Completed', 'Issue Reported'];
 
 export default function Tickets() {
-  const { tickets: data, equipment, addTicket, updateTicket, technicians } = useData();
+  const { tickets: data, equipment, addTicket, updateTicket, technicians, technicianName } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -132,7 +132,7 @@ export default function Tickets() {
                     <p className="text-[11px] text-muted-foreground">{t.id} · {t.location}</p>
                   </td>
                   <td className="px-5 py-3.5 text-muted-foreground">{t.customerName}</td>
-                  <td className="px-5 py-3.5 text-muted-foreground hidden lg:table-cell">{t.assignedTechnician || '—'}</td>
+                  <td className="px-5 py-3.5 text-muted-foreground hidden lg:table-cell">{technicianName(t.assignedTechnician) || '—'}</td>
                   <td className="px-5 py-3.5"><StatusBadge status={t.status} /></td>
                   <td className="px-5 py-3.5 text-muted-foreground text-[12px]">{t.createdDate}</td>
                   <td className="px-5 py-3.5 text-xs text-primary font-semibold">View</td>
@@ -165,7 +165,7 @@ export default function Tickets() {
             </div>
             <div className="flex items-center justify-between text-[11px] text-muted-foreground mt-2 pt-2 border-t border-border/40">
               <span>{t.customerName}</span>
-              <span>{t.assignedTechnician || 'Unassigned'}</span>
+              <span>{technicianName(t.assignedTechnician) || 'Unassigned'}</span>
             </div>
           </div>
         ))}
@@ -200,7 +200,7 @@ export default function Tickets() {
                     <Select value={detailTicket.assignedTechnician || ''} onValueChange={v => assignTechnician(detailTicket.id, v)}>
                       <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select technician" /></SelectTrigger>
                       <SelectContent>
-                        {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.name}>{t.name}</SelectItem>)}
+                        {technicians.filter(t => t.isActive).map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
                       </SelectContent>
                     </Select>
                   </div>
