@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3, Download, Pencil } from 'lucide-react';
 import jsPDF from 'jspdf';
-import { AMCStatus } from '@/data/mockData';
+import { AMCStatus } from '@/data/types';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

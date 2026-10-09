@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { Search, Filter, LayoutGrid, List, CalendarDays, Zap, UserPlus, Sparkles, Clock, CheckCircle2, Users, AlertTriangle, TrendingUp } from 'lucide-react';
-import { PMStatus } from '@/data/mockData';
+import { PMStatus } from '@/data/types';
 import { useData } from '@/context/DataContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';

@@ -1,11 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, ReactNode } from 'react';
 import {
-  customers as seedCustomers,
-  equipment as seedEquipment,
-  tickets as seedTickets,
-  amcContracts as seedAMCContracts,
-  pmSchedules as seedPMSchedules,
-  technicians as seedTechnicians,
   Customer,
   Equipment,
   InstallationTicket,
@@ -15,7 +9,7 @@ import {
   PMSchedule,
   PMStatus,
   Technician,
-} from '@/data/mockData';
+} from '@/data/types';
 import { supabase } from '@/integrations/supabase/client';
 
 type CustomerInput = Omit<Customer, 'id' | 'createdAt'>;
@@ -29,6 +23,8 @@ type TechnicianUpdate = Partial<Pick<Technician, 'name' | 'phone' | 'email' | 's
 
 interface DataContextType {
   loading: boolean;
+  /** Non-null when the last load from Supabase failed. */
+  loadError: string | null;
   customers: Customer[];
   equipment: Equipment[];
   tickets: InstallationTicket[];
@@ -142,86 +138,13 @@ const toTechnician = (row: any): Technician => ({
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [tickets, setTickets] = useState<InstallationTicket[]>([]);
   const [amcContracts, setAmcContracts] = useState<AMCContract[]>([]);
   const [pmSchedules, setPMSchedules] = useState<PMSchedule[]>([]);
   const [technicians, setTechnicians] = useState<Technician[]>([]);
-
-  const seedIfEmpty = useCallback(async () => {
-    const { count, error } = await sb.from('customers').select('*', { count: 'exact', head: true });
-    if (error) throw error;
-    if ((count ?? 0) > 0) return;
-
-    const customerRows = seedCustomers.map(c => ({
-      id: c.id,
-      name: c.name,
-      contact_person: c.contactPerson,
-      phone: c.phone,
-      email: c.email,
-      address: c.address,
-      created_at: c.createdAt,
-    }));
-    const equipmentRows = seedEquipment.map(e => ({
-      id: e.id,
-      name: e.name,
-      model_number: e.modelNumber,
-      serial_number: e.serialNumber,
-      customer_id: e.customerId,
-      customer_name: e.customerName,
-      installation_date: e.installationDate,
-      warranty_start_date: e.warrantyStartDate,
-      warranty_end_date: e.warrantyEndDate,
-    }));
-    const ticketRows = seedTickets.map(t => ({
-      id: t.id,
-      equipment_id: t.equipmentId,
-      equipment_name: t.equipmentName,
-      customer_id: t.customerId,
-      customer_name: t.customerName,
-      location: t.location,
-      status: t.status,
-      assigned_technician: t.assignedTechnician,
-      remarks: t.remarks,
-      issue_type: t.issueType,
-      created_date: t.createdDate,
-      completed_date: t.completedDate,
-    }));
-    const amcRows = seedAMCContracts.map(a => ({
-      id: a.id,
-      equipment_id: a.equipmentId,
-      equipment_name: a.equipmentName,
-      customer_id: a.customerId,
-      customer_name: a.customerName,
-      start_date: a.startDate,
-      end_date: a.endDate,
-      price: a.price,
-      status: a.status,
-    }));
-    const pmRows = seedPMSchedules.map(p => ({
-      id: p.id,
-      amc_id: p.amcId,
-      equipment_id: p.equipmentId,
-      equipment_name: p.equipmentName,
-      customer_name: p.customerName,
-      pm_number: p.pmNumber,
-      planned_date: p.plannedDate,
-      status: p.status,
-      assigned_technician: p.assignedTechnician,
-    }));
-
-    const insertCustomers = await sb.from('customers').insert(customerRows);
-    if (insertCustomers.error) throw insertCustomers.error;
-    const insertEquipment = await sb.from('equipment').insert(equipmentRows);
-    if (insertEquipment.error) throw insertEquipment.error;
-    const insertTickets = await sb.from('tickets').insert(ticketRows);
-    if (insertTickets.error) throw insertTickets.error;
-    const insertAMC = await sb.from('amc_contracts').insert(amcRows);
-    if (insertAMC.error) throw insertAMC.error;
-    const insertPM = await sb.from('pm_schedules').insert(pmRows);
-    if (insertPM.error) throw insertPM.error;
-  }, []);
 
   const loadAllData = useCallback(async () => {
     const [customersRes, equipmentRes, ticketsRes, amcRes, pmRes, techRes] = await Promise.all([
@@ -253,17 +176,13 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     const init = async () => {
       try {
-        await seedIfEmpty();
         await loadAllData();
+        if (mounted) setLoadError(null);
       } catch (error) {
-        console.error('Failed loading Supabase data, falling back to seed data:', error);
-        if (!mounted) return;
-        setCustomers(seedCustomers);
-        setEquipment(seedEquipment);
-        setTickets(seedTickets);
-        setAmcContracts(seedAMCContracts);
-        setPMSchedules(seedPMSchedules);
-        setTechnicians(seedTechnicians);
+        // Never substitute fabricated data for a failed load - an empty table
+        // with a visible error is honest, demo rows pretending to be real are not.
+        console.error('Failed loading data from Supabase:', error);
+        if (mounted) setLoadError(error instanceof Error ? error.message : String(error));
       } finally {
         if (mounted) setLoading(false);
       }
@@ -271,11 +190,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     init();
 
-    // Reload data whenever auth state changes (login/logout) so RLS-protected
-    // tables (tickets, pm_schedules, technicians) re-fetch with the new JWT.
+    // Reload data whenever auth state changes so RLS-protected tables
+    // (tickets, pm_schedules, technicians) re-fetch with the new JWT.
+    // INITIAL_SESSION is included because that is the event fired when an
+    // existing session is restored on a page load, which init() above may
+    // have raced.
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event) => {
-      if (event === 'SIGNED_IN' || event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
-        loadAllData().catch(err => console.error('Reload after auth change failed:', err));
+      if (
+        event === 'INITIAL_SESSION' ||
+        event === 'SIGNED_IN' ||
+        event === 'SIGNED_OUT' ||
+        event === 'TOKEN_REFRESHED'
+      ) {
+        loadAllData()
+          .then(() => { if (mounted) setLoadError(null); })
+          .catch(err => {
+            console.error('Reload after auth change failed:', err);
+            if (mounted) setLoadError(err instanceof Error ? err.message : String(err));
+          });
       }
     });
 
@@ -283,7 +215,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [loadAllData, seedIfEmpty]);
+  }, [loadAllData]);
 
   const addCustomer = useCallback(async (input: CustomerInput) => {
     const newCustomer: Customer = {
@@ -693,6 +625,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
   const value = useMemo(
     () => ({
       loading,
+      loadError,
       customers,
       equipment,
       tickets,
@@ -714,6 +647,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }),
     [
       loading,
+      loadError,
       customers,
       equipment,
       tickets,

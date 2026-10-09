@@ -2,7 +2,7 @@ import { CalendarCheck, User, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import StatusBadge from '@/components/StatusBadge';
-import type { PMSchedule, PMStatus, Technician } from '@/data/mockData';
+import type { PMSchedule, PMStatus, Technician } from '@/data/types';
 
 interface PMListViewProps {
   pmSchedules: PMSchedule[];

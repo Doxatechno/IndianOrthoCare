@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Search, LayoutGrid, List, Cpu, Filter, Building2, Calendar, Shield } from 'lucide-react';
-import { Equipment } from '@/data/mockData';
+import { Equipment } from '@/data/types';
 import { useData } from '@/context/DataContext';
 import { Input } from '@/components/ui/input';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Search, Plus, Filter, ClipboardList } from 'lucide-react';
-import { InstallationTicket, TicketStatus } from '@/data/mockData';
+import { InstallationTicket, TicketStatus } from '@/data/types';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

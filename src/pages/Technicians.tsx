@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Plus, Wrench, Phone, Mail, UserCheck, UserX, KeyRound, Crown, Headset, Briefcase } from 'lucide-react';
 import { useData } from '@/context/DataContext';
-import { TechnicianRole } from '@/data/mockData';
+import { TechnicianRole } from '@/data/types';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';

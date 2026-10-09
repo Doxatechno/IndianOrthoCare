@@ -1,7 +1,7 @@
 import { CalendarCheck, User, Clock, CheckCircle2, AlertCircle, GripVertical } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
-import type { PMSchedule, PMStatus, Technician } from '@/data/mockData';
+import type { PMSchedule, PMStatus, Technician } from '@/data/types';
 
 interface PMKanbanBoardProps {
   pmSchedules: PMSchedule[];

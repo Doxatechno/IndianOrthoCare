@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
+import { useData } from '@/context/DataContext';
 import { 
   LayoutDashboard, Users, Cpu, ClipboardList, Shield, CalendarCheck, 
   Menu, X, ChevronRight, Bell, Search, LogOut, Wrench, ShoppingCart
@@ -23,6 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
+  const { loadError } = useData();
 
   const currentPage = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 
@@ -146,6 +148,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         {/* Page Content */}
         <main className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-4 lg:p-6">
+          {loadError && (
+            <div
+              role="alert"
+              className="mb-4 rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+            >
+              <span className="font-semibold">Could not load data.</span>{' '}
+              <span className="text-destructive/90">
+                What you see below may be incomplete. {loadError}
+              </span>
+            </div>
+          )}
           {children}
         </main>
       </div>

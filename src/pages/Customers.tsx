@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Plus, Search, Phone, Mail, MapPin, Building2, Pencil } from 'lucide-react';
-import { Customer } from '@/data/mockData';
+import { Customer } from '@/data/types';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';

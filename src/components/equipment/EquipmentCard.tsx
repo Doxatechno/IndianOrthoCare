@@ -1,5 +1,5 @@
 import { Pencil, QrCode, Shield, ShieldAlert, ShieldOff, Cpu } from 'lucide-react';
-import { Equipment } from '@/data/mockData';
+import { Equipment } from '@/data/types';
 import { Button } from '@/components/ui/button';
 
 interface EquipmentCardProps {
