@@ -26,8 +26,14 @@ export default function RaiseTicket() {
   useEffect(() => {
     if (!equipmentId) return;
     (async () => {
-      const { data, error } = await (supabase as any).from('equipment').select('*').eq('id', equipmentId).single();
+      // Anonymous visitors cannot read the equipment table (it would expose the
+      // whole installed base). This function returns only the fields this form
+      // renders, for one equipment id.
+      const { data, error } = await (supabase as any)
+        .rpc('get_equipment_for_qr', { _equipment_id: equipmentId })
+        .maybeSingle();
       if (error || !data) {
+        if (error) console.error('Failed to load equipment for QR:', error);
         setNotFound(true);
       } else {
         setEquipment(data);

@@ -24,11 +24,17 @@ import NotFound from "./pages/NotFound.tsx";
 
 const queryClient = new QueryClient();
 
+// The data layer is mounted only inside authenticated areas. It eagerly loads
+// every business table, so wrapping the public routes in it made anonymous
+// visitors (e.g. a customer scanning a QR label) fire a read at customers,
+// equipment, tickets, amc_contracts, pm_schedules and technicians on page load.
 function AdminLayout() {
   return (
-    <AppLayout>
-      <Outlet />
-    </AppLayout>
+    <DataProvider>
+      <AppLayout>
+        <Outlet />
+      </AppLayout>
+    </DataProvider>
   );
 }
 
@@ -38,35 +44,35 @@ const App = () => (
       <Toaster />
       <Sonner />
       <AuthProvider>
-        <DataProvider>
-          <BrowserRouter>
-            <Routes>
-              <Route path="/login" element={<AdminLogin />} />
-              <Route path="/technician-login" element={<TechnicianLogin />} />
-              <Route path="/raise-ticket/:equipmentId" element={<RaiseTicket />} />
-              <Route path="/technician-portal" element={
-                <TechProtectedRoute>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<AdminLogin />} />
+            <Route path="/technician-login" element={<TechnicianLogin />} />
+            <Route path="/raise-ticket/:equipmentId" element={<RaiseTicket />} />
+            <Route path="/technician-portal" element={
+              <TechProtectedRoute>
+                <DataProvider>
                   <TechnicianPortal />
-                </TechProtectedRoute>
-              } />
-              <Route element={
-                <AdminProtectedRoute>
-                  <AdminLayout />
-                </AdminProtectedRoute>
-              }>
-                <Route path="/" element={<Dashboard />} />
-                <Route path="/customers" element={<Customers />} />
-                <Route path="/equipment" element={<EquipmentPage />} />
-                <Route path="/tickets" element={<Tickets />} />
-                <Route path="/amc" element={<AMCContracts />} />
-                <Route path="/pm-schedules" element={<PMSchedules />} />
-                <Route path="/technicians" element={<Technicians />} />
-                <Route path="/sales-orders" element={<SalesOrders />} />
-                <Route path="*" element={<NotFound />} />
-              </Route>
-            </Routes>
-          </BrowserRouter>
-        </DataProvider>
+                </DataProvider>
+              </TechProtectedRoute>
+            } />
+            <Route element={
+              <AdminProtectedRoute>
+                <AdminLayout />
+              </AdminProtectedRoute>
+            }>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/customers" element={<Customers />} />
+              <Route path="/equipment" element={<EquipmentPage />} />
+              <Route path="/tickets" element={<Tickets />} />
+              <Route path="/amc" element={<AMCContracts />} />
+              <Route path="/pm-schedules" element={<PMSchedules />} />
+              <Route path="/technicians" element={<Technicians />} />
+              <Route path="/sales-orders" element={<SalesOrders />} />
+              <Route path="*" element={<NotFound />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
       </AuthProvider>
     </TooltipProvider>
   </QueryClientProvider>
