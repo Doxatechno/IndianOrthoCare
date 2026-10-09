@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3, Download, Pencil } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3, Download, Pencil, RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
 import { AMCStatus } from '@/data/types';
 import { useData } from '@/context/DataContext';
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Card, CardContent } from '@/components/ui/card';
 import StatusBadge from '@/components/StatusBadge';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const allStatuses: AMCStatus[] = ['Quotation Sent', 'PO Released', 'Invoice Generated', 'Payment Received'];
 
@@ -54,65 +55,67 @@ function WarrantyCountdown({ warrantyEndDate }: { warrantyEndDate: string | null
 }
 
 export default function AMCContracts() {
-  const { amcContracts: data, equipment, customers, addAMCContract, updateAMCStatus } = useData();
+  const { amcContracts: data, equipment, customers, addAMCContract, updateAMCStatus, refreshData } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [warrantyFilter, setWarrantyFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ equipmentId: '', startDate: '', endDate: '', price: '' });
   const [autoCreating, setAutoCreating] = useState(false);
+  const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
 
   // Quotation dialog
   const [quotationDialogOpen, setQuotationDialogOpen] = useState(false);
   const [quotationAmcId, setQuotationAmcId] = useState<string | null>(null);
   const [quotationPrice, setQuotationPrice] = useState('');
 
-  // Auto-create AMC contracts for equipment with warranties expiring within 180 days
-  const autoCreateAMCForExpiringEquipment = useCallback(async () => {
-    if (autoCreating) return;
+  // Equipment whose warranty lapses within 180 days and has no AMC contract yet.
+  // Offered as an explicit action - this used to run on mount, so merely
+  // opening this page created commercial contracts in the database.
+  const renewalCandidates = useMemo(
+    () =>
+      equipment.filter(e => {
+        if (!e.warrantyEndDate) return false;
+        const daysLeft = getWarrantyDaysLeft(e.warrantyEndDate);
+        if (daysLeft === null || daysLeft < 0 || daysLeft > 180) return false;
+        return !data.some(a => a.equipmentId === e.id);
+      }),
+    [equipment, data],
+  );
+
+  const createRenewalContracts = useCallback(async () => {
+    if (autoCreating || renewalCandidates.length === 0) return;
     setAutoCreating(true);
 
     try {
       const sb = supabase as any;
 
-      // 1. Get all equipment_ids that already have AMC contracts (server-side, not stale state)
+      // Re-check server-side rather than trusting local state, so two admins
+      // doing this at once cannot both decide the same equipment is uncovered.
       const { data: existingRows, error: existingErr } = await sb
         .from('amc_contracts')
-        .select('equipment_id, id');
+        .select('equipment_id');
       if (existingErr) throw existingErr;
 
-      const coveredEquipmentIds = new Set((existingRows ?? []).map((r: any) => r.equipment_id));
+      const covered = new Set((existingRows ?? []).map((r: { equipment_id: string }) => r.equipment_id));
+      const toCreate = renewalCandidates.filter(e => !covered.has(e.id));
 
-      // 2. Find the current max AMC numeric ID
-      let maxNum = 0;
-      for (const r of existingRows ?? []) {
-        const n = Number(String(r.id).replace('AMC-', ''));
-        if (Number.isFinite(n) && n > maxNum) maxNum = n;
+      if (toCreate.length === 0) {
+        toast.info('Those contracts already exist.');
+        setRenewalDialogOpen(false);
+        await refreshData();
+        return;
       }
 
-      // 3. Filter expiring equipment not already covered
-      const expiringEquipment = equipment.filter(e => {
-        if (!e.warrantyEndDate) return false;
-        const daysLeft = getWarrantyDaysLeft(e.warrantyEndDate);
-        if (daysLeft === null || daysLeft < 0) return false;
-        if (daysLeft > 180) return false;
-        return !coveredEquipmentIds.has(e.id);
-      });
-
-      if (expiringEquipment.length === 0) return;
-
-      // 4. Build batch rows with incrementing IDs
-      const newRows = expiringEquipment.map((eq, idx) => {
-        const warrantyEnd = new Date(eq.warrantyEndDate!);
-        const amcStart = new Date(warrantyEnd);
+      // Ids come from the column default.
+      const newRows = toCreate.map(eq => {
+        const amcStart = new Date(eq.warrantyEndDate!);
         amcStart.setDate(amcStart.getDate() + 1);
         const amcEnd = new Date(amcStart);
         amcEnd.setFullYear(amcEnd.getFullYear() + 1);
-        const newId = `AMC-${String(maxNum + idx + 1).padStart(3, '0')}`;
         const customer = customers.find(c => c.id === eq.customerId);
 
         return {
-          id: newId,
           equipment_id: eq.id,
           equipment_name: eq.name,
           customer_id: eq.customerId,
@@ -125,39 +128,21 @@ export default function AMCContracts() {
         };
       });
 
-      // 5. Single batch insert
       const { error: insertErr } = await sb.from('amc_contracts').insert(newRows);
       if (insertErr) throw insertErr;
 
-      // 6. Reload full data by re-fetching from context (trigger re-render via window reload workaround)
-      // Instead, directly update local state via the data context's loadAllData
-      // We'll just reload the page data by calling window.location.reload() — but better: just refetch
-      // Simplest: append to local state
-      const newAMCs = newRows.map((r: any) => ({
-        id: r.id,
-        equipmentId: r.equipment_id,
-        equipmentName: r.equipment_name,
-        customerId: r.customer_id,
-        customerName: r.customer_name,
-        startDate: r.start_date,
-        endDate: r.end_date,
-        price: r.price,
-        status: r.status as AMCStatus,
-      }));
-      // We can't directly set amcContracts from here, so reload
-      window.location.reload();
+      await refreshData();
+      setRenewalDialogOpen(false);
+      toast.success(
+        `Created ${newRows.length} renewal contract${newRows.length === 1 ? '' : 's'}. Add a price to each before sending a quotation.`,
+      );
     } catch (err) {
-      console.error('Auto-create AMC batch failed:', err);
+      console.error('Failed to create renewal contracts:', err);
+      toast.error(err instanceof Error ? err.message : 'Could not create renewal contracts');
     } finally {
       setAutoCreating(false);
     }
-  }, [equipment, customers, autoCreating]);
-
-  useEffect(() => {
-    if (equipment.length > 0) {
-      autoCreateAMCForExpiringEquipment();
-    }
-  }, [equipment.length]);
+  }, [autoCreating, renewalCandidates, customers, refreshData]);
 
   const warrantyMap = useMemo(() => new Map(equipment.map(e => [e.id, e.warrantyEndDate])), [equipment]);
 
@@ -220,10 +205,16 @@ export default function AMCContracts() {
   };
 
   const updateStatus = async (amcId: string, status: AMCStatus) => {
+    const amc = data.find(a => a.id === amcId);
+    if (status === 'Payment Received' && (!amc || Number(amc.price) <= 0)) {
+      toast.error('Set a contract price before marking payment received.');
+      return;
+    }
     try {
       await updateAMCStatus(amcId, status);
     } catch (error) {
       console.error('Failed to update AMC status:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not update status');
     }
   };
 
@@ -374,6 +365,47 @@ export default function AMCContracts() {
           <h1 className="page-header font-display">AMC Contracts</h1>
           <p className="page-subheader">Annual Maintenance Contracts</p>
         </div>
+        <div className="flex items-center gap-2">
+        {renewalCandidates.length > 0 && (
+          <Dialog open={renewalDialogOpen} onOpenChange={setRenewalDialogOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="gap-2 rounded-xl">
+                <RefreshCw size={16} /> Renewals due ({renewalCandidates.length})
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-lg rounded-2xl">
+              <DialogHeader>
+                <DialogTitle className="font-display">Create renewal contracts</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-3 pt-2">
+                <p className="text-sm text-muted-foreground">
+                  {renewalCandidates.length} piece{renewalCandidates.length === 1 ? '' : 's'} of equipment
+                  come{renewalCandidates.length === 1 ? 's' : ''} off warranty within 180 days and
+                  {renewalCandidates.length === 1 ? ' has' : ' have'} no AMC contract. A draft contract
+                  will be created for each, starting the day after warranty ends, with no price set.
+                </p>
+                <div className="max-h-56 overflow-y-auto rounded-xl border border-border divide-y divide-border/60">
+                  {renewalCandidates.map(e => (
+                    <div key={e.id} className="px-3 py-2 text-xs">
+                      <p className="font-semibold text-foreground">{e.name}</p>
+                      <p className="text-muted-foreground">
+                        {e.customerName} · warranty ends {e.warrantyEndDate}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1 rounded-xl" onClick={() => setRenewalDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button className="flex-1 rounded-xl font-semibold" disabled={autoCreating} onClick={createRenewalContracts}>
+                    {autoCreating ? 'Creating…' : `Create ${renewalCandidates.length} contract${renewalCandidates.length === 1 ? '' : 's'}`}
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button className="gap-2 rounded-xl shadow-md hover:shadow-lg transition-all active:scale-95"><Plus size={16} /> Create AMC</Button>
@@ -408,6 +440,7 @@ export default function AMCContracts() {
             </div>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {/* Mini Dashboard */}

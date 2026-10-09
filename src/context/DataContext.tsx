@@ -25,6 +25,8 @@ interface DataContextType {
   loading: boolean;
   /** Non-null when the last load from Supabase failed. */
   loadError: string | null;
+  /** Re-fetch every table. Use instead of reloading the page. */
+  refreshData: () => Promise<void>;
   customers: Customer[];
   equipment: Equipment[];
   tickets: InstallationTicket[];
@@ -565,6 +567,16 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setTechnicians(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)));
   }, []);
 
+  const refreshData = useCallback(async () => {
+    try {
+      await loadAllData();
+      setLoadError(null);
+    } catch (err) {
+      setLoadError(err instanceof Error ? err.message : String(err));
+      throw err;
+    }
+  }, [loadAllData]);
+
   const technicianNames = useMemo(
     () => new Map(technicians.map(t => [t.id, t.name])),
     [technicians],
@@ -579,6 +591,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     () => ({
       loading,
       loadError,
+      refreshData,
       customers,
       equipment,
       tickets,
@@ -601,6 +614,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [
       loading,
       loadError,
+      refreshData,
       customers,
       equipment,
       tickets,
