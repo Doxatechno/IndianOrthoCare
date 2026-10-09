@@ -22,3 +22,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Local environment files. Never commit these: a publishable key is harmless,
+# but this is where a service-role key eventually gets added by accident.
+.env
+.env.*
+!.env.example
