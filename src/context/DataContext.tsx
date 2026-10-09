@@ -54,14 +54,6 @@ const sb = supabase as any;
 
 const today = () => new Date().toISOString().split('T')[0];
 
-const nextId = (ids: string[], prefix: string) => {
-  const max = ids.reduce((acc, id) => {
-    const n = Number(id.replace(prefix, ''));
-    return Number.isFinite(n) ? Math.max(acc, n) : acc;
-  }, 0);
-  return `${prefix}${String(max + 1).padStart(3, '0')}`;
-};
-
 const toCustomer = (row: any): Customer => ({
   id: row.id,
   name: row.name,
@@ -218,25 +210,23 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [loadAllData]);
 
   const addCustomer = useCallback(async (input: CustomerInput) => {
-    const newCustomer: Customer = {
-      id: nextId(customers.map(c => c.id), 'C'),
-      ...input,
-      createdAt: today(),
-    };
-
-    const { error } = await sb.from('customers').insert({
-      id: newCustomer.id,
-      name: newCustomer.name,
-      contact_person: newCustomer.contactPerson,
-      phone: newCustomer.phone,
-      email: newCustomer.email,
-      address: newCustomer.address,
-      created_at: newCustomer.createdAt,
-    });
+    // The id comes from the column default, not from max(local state) + 1.
+    const { data, error } = await sb
+      .from('customers')
+      .insert({
+        name: input.name,
+        contact_person: input.contactPerson,
+        phone: input.phone,
+        email: input.email,
+        address: input.address,
+        created_at: today(),
+      })
+      .select()
+      .single();
     if (error) throw error;
 
-    setCustomers(prev => [newCustomer, ...prev]);
-  }, [customers]);
+    setCustomers(prev => [toCustomer(data), ...prev]);
+  }, []);
 
   const updateCustomer = useCallback(async (id: string, input: CustomerInput) => {
     const { error } = await sb
@@ -271,33 +261,25 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const addEquipment = useCallback(async (input: EquipmentInput) => {
     const customer = customers.find(c => c.id === input.customerId);
-    const newEquipment: Equipment = {
-      id: nextId(equipment.map(e => e.id), 'E'),
-      name: input.name,
-      modelNumber: input.modelNumber,
-      serialNumber: input.serialNumber,
-      customerId: input.customerId,
-      customerName: customer?.name || '',
-      installationDate: null,
-      warrantyStartDate: null,
-      warrantyEndDate: null,
-    };
 
-    const { error } = await sb.from('equipment').insert({
-      id: newEquipment.id,
-      name: newEquipment.name,
-      model_number: newEquipment.modelNumber,
-      serial_number: newEquipment.serialNumber,
-      customer_id: newEquipment.customerId,
-      customer_name: newEquipment.customerName,
-      installation_date: newEquipment.installationDate,
-      warranty_start_date: newEquipment.warrantyStartDate,
-      warranty_end_date: newEquipment.warrantyEndDate,
-    });
+    const { data, error } = await sb
+      .from('equipment')
+      .insert({
+        name: input.name,
+        model_number: input.modelNumber,
+        serial_number: input.serialNumber,
+        customer_id: input.customerId,
+        customer_name: customer?.name || '',
+        installation_date: null,
+        warranty_start_date: null,
+        warranty_end_date: null,
+      })
+      .select()
+      .single();
     if (error) throw error;
 
-    setEquipment(prev => [newEquipment, ...prev]);
-  }, [customers, equipment]);
+    setEquipment(prev => [toEquipment(data), ...prev]);
+  }, [customers]);
 
   const updateEquipment = useCallback(async (input: Equipment) => {
     const customer = customers.find(c => c.id === input.customerId);
@@ -343,39 +325,27 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const selectedEquipment = equipment.find(e => e.id === input.equipmentId);
     const selectedCustomer = customers.find(c => c.id === selectedEquipment?.customerId);
 
-    const newTicket: InstallationTicket = {
-      id: nextId(tickets.map(t => t.id), 'TK-'),
-      equipmentId: input.equipmentId,
-      equipmentName: selectedEquipment?.name || '',
-      customerId: selectedEquipment?.customerId || '',
-      customerName: selectedCustomer?.name || '',
-      location: input.location,
-      status: 'Pending',
-      assignedTechnician: null,
-      remarks: input.remarks,
-      issueType: null,
-      createdDate: today(),
-      completedDate: null,
-    };
-
-    const { error } = await sb.from('tickets').insert({
-      id: newTicket.id,
-      equipment_id: newTicket.equipmentId,
-      equipment_name: newTicket.equipmentName,
-      customer_id: newTicket.customerId,
-      customer_name: newTicket.customerName,
-      location: newTicket.location,
-      status: newTicket.status,
-      assigned_technician: newTicket.assignedTechnician,
-      remarks: newTicket.remarks,
-      issue_type: newTicket.issueType,
-      created_date: newTicket.createdDate,
-      completed_date: newTicket.completedDate,
-    });
+    const { data, error } = await sb
+      .from('tickets')
+      .insert({
+        equipment_id: input.equipmentId,
+        equipment_name: selectedEquipment?.name || '',
+        customer_id: selectedEquipment?.customerId || '',
+        customer_name: selectedCustomer?.name || '',
+        location: input.location,
+        status: 'Pending',
+        assigned_technician: null,
+        remarks: input.remarks,
+        issue_type: null,
+        created_date: today(),
+        completed_date: null,
+      })
+      .select()
+      .single();
     if (error) throw error;
 
-    setTickets(prev => [newTicket, ...prev]);
-  }, [customers, equipment, tickets]);
+    setTickets(prev => [toTicket(data), ...prev]);
+  }, [customers, equipment]);
 
   const updateTicket = useCallback(async (ticketId: string, patch: TicketUpdate) => {
     const current = tickets.find(t => t.id === ticketId);
@@ -416,33 +386,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const selectedEquipment = equipment.find(e => e.id === input.equipmentId);
     const selectedCustomer = customers.find(c => c.id === selectedEquipment?.customerId);
 
-    const newAMC: AMCContract = {
-      id: nextId(amcContracts.map(a => a.id), 'AMC-'),
-      equipmentId: input.equipmentId,
-      equipmentName: selectedEquipment?.name || '',
-      customerId: selectedEquipment?.customerId || '',
-      customerName: selectedCustomer?.name || '',
-      startDate: input.startDate,
-      endDate: input.endDate,
-      price: input.price,
-      status: 'Quotation Sent',
-    };
-
-    const { error } = await sb.from('amc_contracts').insert({
-      id: newAMC.id,
-      equipment_id: newAMC.equipmentId,
-      equipment_name: newAMC.equipmentName,
-      customer_id: newAMC.customerId,
-      customer_name: newAMC.customerName,
-      start_date: newAMC.startDate,
-      end_date: newAMC.endDate,
-      price: newAMC.price,
-      status: newAMC.status,
-    });
+    const { data, error } = await sb
+      .from('amc_contracts')
+      .insert({
+        equipment_id: input.equipmentId,
+        equipment_name: selectedEquipment?.name || '',
+        customer_id: selectedEquipment?.customerId || '',
+        customer_name: selectedCustomer?.name || '',
+        start_date: input.startDate,
+        end_date: input.endDate,
+        price: input.price,
+        status: 'Quotation Sent',
+      })
+      .select()
+      .single();
     if (error) throw error;
 
-    setAmcContracts(prev => [newAMC, ...prev]);
-  }, [amcContracts, customers, equipment]);
+    setAmcContracts(prev => [toAMC(data), ...prev]);
+  }, [customers, equipment]);
 
   const updateAMCStatus = useCallback(async (amcId: string, status: AMCStatus) => {
     const { error } = await sb.from('amc_contracts').update({ status }).eq('id', amcId);
@@ -570,32 +531,24 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [pmSchedules, equipment, customers]);
 
   const addTechnician = useCallback(async (input: TechnicianInput) => {
-    const newTech: Technician = {
-      id: nextId(technicians.map(t => t.id), 'TECH-'),
-      employeeCode: '',
-      name: input.name,
-      phone: input.phone,
-      email: input.email,
-      specialization: input.specialization,
-      role: 'Service Engineer',
-      reportingManager: '',
-      isActive: true,
-      createdAt: today(),
-    };
-
-    const { error } = await sb.from('technicians').insert({
-      id: newTech.id,
-      name: newTech.name,
-      phone: newTech.phone,
-      email: newTech.email,
-      specialization: newTech.specialization,
-      is_active: newTech.isActive,
-      created_at: newTech.createdAt,
-    });
+    const { data, error } = await sb
+      .from('technicians')
+      .insert({
+        name: input.name,
+        phone: input.phone,
+        email: input.email,
+        specialization: input.specialization,
+        is_active: true,
+        created_at: today(),
+      })
+      .select()
+      .single();
     if (error) throw error;
 
-    setTechnicians(prev => [...prev, newTech].sort((a, b) => a.name.localeCompare(b.name)));
-  }, [technicians]);
+    setTechnicians(prev =>
+      [...prev, toTechnician(data)].sort((a, b) => a.name.localeCompare(b.name)),
+    );
+  }, []);
 
   const updateTechnician = useCallback(async (id: string, patch: TechnicianUpdate) => {
     const dbPatch: Record<string, unknown> = {};

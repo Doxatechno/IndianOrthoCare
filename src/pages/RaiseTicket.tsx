@@ -46,22 +46,17 @@ export default function RaiseTicket() {
     if (!equipment || !form.issueType || !form.remarks) return;
     setSubmitting(true);
     try {
-      // Generate ticket ID
-      const { data: lastTicket } = await (supabase as any).from('tickets').select('id').order('id', { ascending: false }).limit(1);
-      const lastNum = lastTicket?.[0]?.id ? parseInt(lastTicket[0].id.replace('TK-', '')) : 0;
-      const newId = `TK-${String(lastNum + 1).padStart(3, '0')}`;
-
-      const { error } = await (supabase as any).from('tickets').insert({
-        id: newId,
-        equipment_id: equipment.id,
-        equipment_name: equipment.name,
-        customer_id: equipment.customer_id,
-        customer_name: equipment.customer_name,
-        location: form.location,
-        status: 'Pending',
-        remarks: `[Customer: ${form.contactName || 'N/A'}, Phone: ${form.contactPhone || 'N/A'}] ${form.remarks}`,
-        issue_type: form.issueType,
-        created_date: new Date().toISOString().split('T')[0],
+      // The ticket is created server-side: it allocates the id (the old
+      // client-side max+1 always resolved to TK-001 here, because anon cannot
+      // read the tickets table) and fixes status and assignment itself, so a
+      // caller cannot submit pre-assigned or pre-completed work.
+      const { error } = await (supabase as any).rpc('create_ticket_from_qr', {
+        _equipment_id: equipment.id,
+        _issue_type: form.issueType,
+        _remarks: form.remarks,
+        _location: form.location || null,
+        _contact_name: form.contactName || null,
+        _contact_phone: form.contactPhone || null,
       });
       if (error) throw error;
       setSubmitted(true);
