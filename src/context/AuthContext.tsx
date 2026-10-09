@@ -32,8 +32,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loadProfile = async (userId: string) => {
     try {
       const [techRes, rolesRes] = await Promise.all([
-        (supabase as any).from('technicians').select('id').eq('user_id', userId).maybeSingle(),
-        (supabase as any).from('user_roles').select('role').eq('user_id', userId),
+        supabase.from('technicians').select('id').eq('user_id', userId).maybeSingle(),
+        supabase.from('user_roles').select('role').eq('user_id', userId),
       ]);
       setTechnicianId(techRes.data?.id ?? null);
       const roles: string[] = (rolesRes.data ?? []).map((r: { role: string }) => r.role);

@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Card, CardContent } from '@/components/ui/card';
 import StatusBadge from '@/components/StatusBadge';
-import { supabase } from '@/integrations/supabase/client';
+import { sb } from '@/integrations/supabase/untyped';
 import { toast } from 'sonner';
 
 const allStatuses: AMCStatus[] = ['Quotation Sent', 'PO Released', 'Invoice Generated', 'Payment Received'];
@@ -88,7 +88,6 @@ export default function AMCContracts() {
     setAutoCreating(true);
 
     try {
-      const sb = supabase as any;
 
       // Re-check server-side rather than trusting local state, so two admins
       // doing this at once cannot both decide the same equipment is uncovered.
@@ -191,7 +190,6 @@ export default function AMCContracts() {
       });
       const eq = equipment.find(e => e.id === form.equipmentId);
       if (eq?.warrantyEndDate) {
-        const sb = supabase as any;
         const { data: rows } = await sb.from('amc_contracts').select('id').eq('equipment_id', form.equipmentId).order('id', { ascending: false }).limit(1);
         if (rows && rows.length > 0) {
           await sb.from('amc_contracts').update({ warranty_end_date: eq.warrantyEndDate }).eq('id', rows[0].id);
@@ -335,7 +333,6 @@ export default function AMCContracts() {
     if (!amc) return;
 
     const price = Number(quotationPrice);
-    const sb = supabase as any;
     await sb.from('amc_contracts').update({ price }).eq('id', quotationAmcId);
     await updateAMCStatus(quotationAmcId, 'Quotation Sent');
 

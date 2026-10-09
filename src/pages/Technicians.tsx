@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { errorMessage } from '@/lib/errors';
 
 const ROLE_CONFIG: Record<TechnicianRole, { icon: typeof Crown; color: string; bg: string }> = {
   'Service Head': { icon: Crown, color: 'text-amber-600', bg: 'bg-amber-500/10' },
@@ -114,14 +115,15 @@ export default function Technicians() {
       // A non-2xx response surfaces as a FunctionsHttpError whose message is
       // generic, so read the real reason out of the response body.
       if (error) {
-        const body = await (error as any)?.context?.json?.().catch(() => null);
+        const context = (error as { context?: { json?: () => Promise<{ error?: string }> } }).context;
+        const body = await context?.json?.().catch(() => null);
         throw new Error(body?.error ?? error.message);
       }
       if (data?.error) throw new Error(data.error);
       toast.success(`Login created for ${credForm.techName}`);
       setCredDialogOpen(false);
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to create login');
+    } catch (err) {
+      toast.error(errorMessage(err, 'Failed to create login'));
     } finally {
       setCredLoading(false);
     }

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { sb } from '@/integrations/supabase/untyped';
 import { Wrench, CheckCircle2, AlertCircle, Send } from 'lucide-react';
 
 interface EquipmentInfo {
@@ -29,7 +29,7 @@ export default function RaiseTicket() {
       // Anonymous visitors cannot read the equipment table (it would expose the
       // whole installed base). This function returns only the fields this form
       // renders, for one equipment id.
-      const { data, error } = await (supabase as any)
+      const { data, error } = await sb
         .rpc('get_equipment_for_qr', { _equipment_id: equipmentId })
         .maybeSingle();
       if (error || !data) {
@@ -50,7 +50,7 @@ export default function RaiseTicket() {
       // client-side max+1 always resolved to TK-001 here, because anon cannot
       // read the tickets table) and fixes status and assignment itself, so a
       // caller cannot submit pre-assigned or pre-completed work.
-      const { error } = await (supabase as any).rpc('create_ticket_from_qr', {
+      const { error } = await sb.rpc('create_ticket_from_qr', {
         _equipment_id: equipment.id,
         _issue_type: form.issueType,
         _remarks: form.remarks,

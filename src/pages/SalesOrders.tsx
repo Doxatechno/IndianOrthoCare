@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw, Search, ShoppingCart, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { errorMessage, type SyncSalesOrdersResult } from '@/lib/errors';
 
 type SalesOrder = {
   id: string;
@@ -45,16 +46,16 @@ export default function SalesOrders() {
   const syncNow = async () => {
     setSyncing(true);
     try {
-      const { data, error } = await supabase.functions.invoke('sync-sales-orders');
+      const { data, error } = await supabase.functions.invoke<SyncSalesOrdersResult>('sync-sales-orders');
       if (error) throw error;
-      if ((data as any)?.ok) {
-        toast({ title: 'Sync complete', description: `${(data as any).synced} orders pulled from portal` });
+      if (data?.ok) {
+        toast({ title: 'Sync complete', description: `${data.synced ?? 0} orders pulled from portal` });
         await load();
       } else {
-        throw new Error((data as any)?.error || 'Unknown error');
+        throw new Error(data?.error || 'Unknown error');
       }
-    } catch (err: any) {
-      toast({ title: 'Sync failed', description: err.message ?? String(err), variant: 'destructive' });
+    } catch (err) {
+      toast({ title: 'Sync failed', description: errorMessage(err, 'Could not sync sales orders'), variant: 'destructive' });
     } finally {
       setSyncing(false);
     }

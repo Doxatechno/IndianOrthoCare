@@ -11,6 +11,16 @@ import {
   Technician,
 } from '@/data/types';
 import { supabase } from '@/integrations/supabase/client';
+import { sb } from '@/integrations/supabase/untyped';
+import type { Database } from '@/integrations/supabase/types';
+
+type Tables = Database['public']['Tables'];
+type CustomerRow = Tables['customers']['Row'];
+type EquipmentRow = Tables['equipment']['Row'];
+type TicketRow = Tables['tickets']['Row'];
+type AMCRow = Tables['amc_contracts']['Row'];
+type PMRow = Tables['pm_schedules']['Row'];
+type TechnicianRow = Tables['technicians']['Row'];
 
 type CustomerInput = Omit<Customer, 'id' | 'createdAt'>;
 type EquipmentInput = Pick<Equipment, 'name' | 'modelNumber' | 'serialNumber' | 'customerId'>;
@@ -52,7 +62,7 @@ interface DataContextType {
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
-const sb = supabase as any;
+
 
 const today = () => new Date().toISOString().split('T')[0];
 
@@ -66,7 +76,9 @@ const today = () => new Date().toISOString().split('T')[0];
  * Only for updates targeting one known row. Cascading updates (e.g. renaming
  * a customer across their equipment) legitimately match zero rows.
  */
-const requireRowsUpdated = async (query: any, subject: string) => {
+type UpdateQuery = { select: (columns: string) => Promise<{ data: unknown[] | null; error: unknown }> };
+
+const requireRowsUpdated = async (query: UpdateQuery, subject: string) => {
   const { data, error } = await query.select('id');
   if (error) throw error;
   if (!data || data.length === 0) {
@@ -77,7 +89,7 @@ const requireRowsUpdated = async (query: any, subject: string) => {
   return data;
 };
 
-const toCustomer = (row: any): Customer => ({
+const toCustomer = (row: CustomerRow): Customer => ({
   id: row.id,
   name: row.name,
   contactPerson: row.contact_person,
@@ -87,7 +99,7 @@ const toCustomer = (row: any): Customer => ({
   createdAt: row.created_at,
 });
 
-const toEquipment = (row: any): Equipment => ({
+const toEquipment = (row: EquipmentRow): Equipment => ({
   id: row.id,
   name: row.name,
   modelNumber: row.model_number,
@@ -99,7 +111,7 @@ const toEquipment = (row: any): Equipment => ({
   warrantyEndDate: row.warranty_end_date,
 });
 
-const toTicket = (row: any): InstallationTicket => ({
+const toTicket = (row: TicketRow): InstallationTicket => ({
   id: row.id,
   equipmentId: row.equipment_id,
   equipmentName: row.equipment_name,
@@ -114,7 +126,7 @@ const toTicket = (row: any): InstallationTicket => ({
   completedDate: row.completed_date,
 });
 
-const toAMC = (row: any): AMCContract => ({
+const toAMC = (row: AMCRow): AMCContract => ({
   id: row.id,
   equipmentId: row.equipment_id,
   equipmentName: row.equipment_name,
@@ -126,7 +138,7 @@ const toAMC = (row: any): AMCContract => ({
   status: row.status,
 });
 
-const toPM = (row: any): PMSchedule => ({
+const toPM = (row: PMRow): PMSchedule => ({
   id: row.id,
   amcId: row.amc_id,
   equipmentId: row.equipment_id,
@@ -138,7 +150,7 @@ const toPM = (row: any): PMSchedule => ({
   assignedTechnician: row.assigned_technician,
 });
 
-const toTechnician = (row: any): Technician => ({
+const toTechnician = (row: TechnicianRow): Technician => ({
   id: row.id,
   employeeCode: row.id,
   name: row.name,

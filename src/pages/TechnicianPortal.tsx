@@ -41,12 +41,12 @@ export default function TechnicianPortal() {
 
   const myTickets = useMemo(
     () => tickets.filter(t => t.assignedTechnician === technicianId),
-    [tickets, selectedTech]
+    [tickets, technicianId]
   );
 
   const myPMs = useMemo(
     () => pmSchedules.filter(p => p.assignedTechnician === technicianId),
-    [pmSchedules, selectedTech]
+    [pmSchedules, technicianId]
   );
 
   const openTickets = myTickets.filter(t => t.status !== 'Completed');
