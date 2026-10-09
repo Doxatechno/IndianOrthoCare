@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import StatusBadge from '@/components/StatusBadge';
+import { toast } from 'sonner';
 
 const allStatuses: TicketStatus[] = ['Pending', 'Assigned', 'In Progress', 'Completed', 'Issue Reported'];
 
@@ -41,6 +42,7 @@ export default function Tickets() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to create ticket:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not create ticket');
     }
   };
 
@@ -49,6 +51,7 @@ export default function Tickets() {
       await updateTicket(ticketId, { assignedTechnician: tech, status: 'Assigned' });
     } catch (error) {
       console.error('Failed to assign technician:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not assign technician');
     }
   };
 
@@ -57,6 +60,7 @@ export default function Tickets() {
       await updateTicket(ticketId, { status });
     } catch (error) {
       console.error('Failed to update status:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not update status');
     }
   };
 

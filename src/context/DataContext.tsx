@@ -56,6 +56,27 @@ const sb = supabase as any;
 
 const today = () => new Date().toISOString().split('T')[0];
 
+/**
+ * PostgREST answers an UPDATE whose rows RLS filtered out with 200 and an
+ * empty body, so `error` is null and a denied write is indistinguishable from
+ * a successful one - the UI would show a success toast and optimistically
+ * render a state the database rejected. Ask for the affected rows back and
+ * treat "none" as the failure it is.
+ *
+ * Only for updates targeting one known row. Cascading updates (e.g. renaming
+ * a customer across their equipment) legitimately match zero rows.
+ */
+const requireRowsUpdated = async (query: any, subject: string) => {
+  const { data, error } = await query.select('id');
+  if (error) throw error;
+  if (!data || data.length === 0) {
+    throw new Error(
+      `${subject} was not updated. You may not have permission to change it, or it no longer exists.`,
+    );
+  }
+  return data;
+};
+
 const toCustomer = (row: any): Customer => ({
   id: row.id,
   name: row.name,
@@ -231,17 +252,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateCustomer = useCallback(async (id: string, input: CustomerInput) => {
-    const { error } = await sb
-      .from('customers')
-      .update({
-        name: input.name,
-        contact_person: input.contactPerson,
-        phone: input.phone,
-        email: input.email,
-        address: input.address,
-      })
-      .eq('id', id);
-    if (error) throw error;
+    await requireRowsUpdated(
+      sb
+        .from('customers')
+        .update({
+          name: input.name,
+          contact_person: input.contactPerson,
+          phone: input.phone,
+          email: input.email,
+          address: input.address,
+        })
+        .eq('id', id),
+      `Customer ${id}`,
+    );
 
     await Promise.all([
       sb.from('equipment').update({ customer_name: input.name }).eq('customer_id', id),
@@ -287,20 +310,22 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const customer = customers.find(c => c.id === input.customerId);
     const customerName = customer?.name || input.customerName;
 
-    const { error } = await sb
-      .from('equipment')
-      .update({
-        name: input.name,
-        model_number: input.modelNumber,
-        serial_number: input.serialNumber,
-        customer_id: input.customerId,
-        customer_name: customerName,
-        installation_date: input.installationDate,
-        warranty_start_date: input.warrantyStartDate,
-        warranty_end_date: input.warrantyEndDate,
-      })
-      .eq('id', input.id);
-    if (error) throw error;
+    await requireRowsUpdated(
+      sb
+        .from('equipment')
+        .update({
+          name: input.name,
+          model_number: input.modelNumber,
+          serial_number: input.serialNumber,
+          customer_id: input.customerId,
+          customer_name: customerName,
+          installation_date: input.installationDate,
+          warranty_start_date: input.warrantyStartDate,
+          warranty_end_date: input.warrantyEndDate,
+        })
+        .eq('id', input.id),
+      `Equipment ${input.id}`,
+    );
 
     await Promise.all([
       sb
@@ -364,8 +389,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (Object.keys(dbPatch).length === 0) return;
 
-    const { error } = await sb.from('tickets').update(dbPatch).eq('id', ticketId);
-    if (error) throw error;
+    await requireRowsUpdated(
+      sb.from('tickets').update(dbPatch).eq('id', ticketId),
+      `Ticket ${ticketId}`,
+    );
 
     setTickets(prev =>
       prev.map(t => {
@@ -408,8 +435,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [customers, equipment]);
 
   const updateAMCStatus = useCallback(async (amcId: string, status: AMCStatus) => {
-    const { error } = await sb.from('amc_contracts').update({ status }).eq('id', amcId);
-    if (error) throw error;
+    await requireRowsUpdated(
+      sb.from('amc_contracts').update({ status }).eq('id', amcId),
+      `Contract ${amcId}`,
+    );
 
     setAmcContracts(prev => prev.map(a => (a.id === amcId ? { ...a, status } : a)));
 
@@ -471,8 +500,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (patch.status !== undefined) dbPatch.status = patch.status;
     if (Object.keys(dbPatch).length === 0) return;
 
-    const { error } = await sb.from('pm_schedules').update(dbPatch).eq('id', pmId);
-    if (error) throw error;
+    await requireRowsUpdated(
+      sb.from('pm_schedules').update(dbPatch).eq('id', pmId),
+      `PM schedule ${pmId}`,
+    );
 
     setPMSchedules(prev => prev.map(p => (p.id === pmId ? { ...p, ...patch } : p)));
 
@@ -561,8 +592,10 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (patch.isActive !== undefined) dbPatch.is_active = patch.isActive;
     if (Object.keys(dbPatch).length === 0) return;
 
-    const { error } = await sb.from('technicians').update(dbPatch).eq('id', id);
-    if (error) throw error;
+    await requireRowsUpdated(
+      sb.from('technicians').update(dbPatch).eq('id', id),
+      `Technician ${id}`,
+    );
 
     setTechnicians(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)));
   }, []);

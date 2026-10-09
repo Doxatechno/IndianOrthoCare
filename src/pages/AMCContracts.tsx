@@ -201,6 +201,7 @@ export default function AMCContracts() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to create AMC contract:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not create AMC contract');
     }
   };
 

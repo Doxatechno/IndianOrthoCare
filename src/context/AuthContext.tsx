@@ -6,6 +6,12 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  /**
+   * True once the role/technician lookup for the current user has finished.
+   * isAdmin and isTechnician are only meaningful when this is true - before
+   * it, they are both false simply because nothing has been fetched yet.
+   */
+  profileLoaded: boolean;
   isTechnician: boolean;
   isAdmin: boolean;
   technicianId: string | null;
@@ -21,15 +27,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [technicianId, setTechnicianId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
 
   const loadProfile = async (userId: string) => {
-    const [techRes, rolesRes] = await Promise.all([
-      (supabase as any).from('technicians').select('id').eq('user_id', userId).maybeSingle(),
-      (supabase as any).from('user_roles').select('role').eq('user_id', userId),
-    ]);
-    setTechnicianId(techRes.data?.id ?? null);
-    const roles: string[] = (rolesRes.data ?? []).map((r: any) => r.role);
-    setIsAdmin(roles.includes('admin'));
+    try {
+      const [techRes, rolesRes] = await Promise.all([
+        (supabase as any).from('technicians').select('id').eq('user_id', userId).maybeSingle(),
+        (supabase as any).from('user_roles').select('role').eq('user_id', userId),
+      ]);
+      setTechnicianId(techRes.data?.id ?? null);
+      const roles: string[] = (rolesRes.data ?? []).map((r: { role: string }) => r.role);
+      setIsAdmin(roles.includes('admin'));
+    } finally {
+      setProfileLoaded(true);
+    }
   };
 
   useEffect(() => {
@@ -37,10 +48,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        // Mark the profile as pending before fetching it, so consumers do not
+        // read the previous user's (or the signed-out) role flags and briefly
+        // conclude this account has no access.
+        setProfileLoaded(false);
         setTimeout(() => { loadProfile(session.user.id); }, 0);
       } else {
         setTechnicianId(null);
         setIsAdmin(false);
+        setProfileLoaded(true);
       }
     });
 
@@ -48,7 +64,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
+        setProfileLoaded(false);
         await loadProfile(session.user.id);
+      } else {
+        setProfileLoaded(true);
       }
       setLoading(false);
     });
@@ -65,6 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await supabase.auth.signOut();
     setTechnicianId(null);
     setIsAdmin(false);
+    setProfileLoaded(true);
   };
 
   return (
@@ -72,6 +92,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       session,
       loading,
+      profileLoaded,
       isTechnician: !!technicianId,
       isAdmin,
       technicianId,

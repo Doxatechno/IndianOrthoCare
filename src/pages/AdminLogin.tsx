@@ -24,7 +24,7 @@ const stats = [
 ];
 
 export default function AdminLogin() {
-  const { signIn, user, isAdmin, isTechnician, loading } = useAuth();
+  const { signIn, user, isAdmin, isTechnician, loading, profileLoaded } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,10 +33,17 @@ export default function AdminLogin() {
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !profileLoaded) return;
     if (user && isAdmin) navigate('/', { replace: true });
     else if (user && isTechnician) navigate('/technician-portal', { replace: true });
-  }, [user, isAdmin, isTechnician, loading, navigate]);
+    else if (user) {
+      // Credentials were accepted but this account has neither the admin role
+      // nor a technician record, so there is nowhere to send it. Without this
+      // branch the user sat on the login screen with no error and no
+      // explanation of what had happened.
+      setError('Signed in, but this account has no access yet. Ask an administrator to grant it a role.');
+    }
+  }, [user, isAdmin, isTechnician, loading, profileLoaded, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

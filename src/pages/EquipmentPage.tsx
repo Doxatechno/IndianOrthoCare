@@ -10,6 +10,7 @@ import EquipmentQRLabel from '@/components/EquipmentQRLabel';
 import EquipmentCard from '@/components/equipment/EquipmentCard';
 import EquipmentAddDialog from '@/components/equipment/EquipmentAddDialog';
 import EquipmentEditDialog from '@/components/equipment/EquipmentEditDialog';
+import { toast } from 'sonner';
 
 type WarrantyFilter = 'all' | 'active' | 'expiring' | 'expired' | 'none';
 
@@ -92,6 +93,7 @@ export default function EquipmentPage() {
       setEditForm(null);
     } catch (error) {
       console.error('Failed to update equipment:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not update equipment');
     }
   };
 

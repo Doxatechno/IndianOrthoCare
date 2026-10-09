@@ -8,6 +8,8 @@ import {
   ChevronRight, Stethoscope, Activity, Shield
 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
+import type { TicketStatus, PMStatus } from '@/data/types';
 
 type TabType = 'tickets' | 'pm' | 'activity';
 
@@ -56,11 +58,21 @@ export default function TechnicianPortal() {
   const currentPM = pmSchedules.find(p => p.id === detailPM);
 
   const handleTicketStatus = async (ticketId: string, status: string) => {
-    await updateTicket(ticketId, { status: status as any });
+    try {
+      await updateTicket(ticketId, { status: status as TicketStatus });
+    } catch (error) {
+      console.error('Failed to update ticket status:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not update this ticket');
+    }
   };
 
   const handlePMStatus = async (pmId: string, status: string) => {
-    await updatePMSchedule(pmId, { status: status as any });
+    try {
+      await updatePMSchedule(pmId, { status: status as PMStatus });
+    } catch (error) {
+      console.error('Failed to update PM status:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not update this PM schedule');
+    }
   };
 
   const handleSignOut = async () => {

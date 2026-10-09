@@ -63,6 +63,7 @@ export default function Technicians() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to add technician:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not add technician');
     }
   };
 
@@ -78,6 +79,7 @@ export default function Technicians() {
       setEditDialogOpen(false);
     } catch (error) {
       console.error('Failed to update technician:', error);
+      toast.error(error instanceof Error ? error.message : 'Could not update technician');
     }
   };
 
