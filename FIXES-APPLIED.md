@@ -16,12 +16,13 @@ built are unchanged and remain a separate build programme.
 | `tsc --noEmit` | clean |
 | `eslint` | **0 problems** (was 45) |
 | `vitest` | 27 passed |
-| Authorization + integrity suite (`supabase/tests/authorization_and_integrity.sql`) | **63 assertions, 0 failed** |
+| Authorization + integrity suites (`npm run test:rls`) | **107 assertions, 0 failed** (44 + 63) |
 | Production build | clean |
 | Migrations | all 24 apply cleanly to a database built from the migrations alone |
 | Schema shape on that database | 9 CHECK constraints · 9 foreign keys · 35 indexes · 22 triggers · **0 policies granting `anon` anything** |
 
-The 63 assertions run against a database built from nothing but the repo migrations, and cover
+The 63 new assertions join the 44 that were already there, each suite against its own database
+built from nothing but the repo migrations. The new ones cover
 the anonymous surface (8 reads blocked, 3 writes blocked, QR lookup still working and leaking
 nothing for an unknown id), technician scope (18 assertions: own tickets, PM visits, equipment,
 customers and contracts only; cannot read the audit log; cannot reassign work to themselves;

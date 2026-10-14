@@ -336,3 +336,18 @@ SELECT t.check_bool('H07 updated_at does NOT survive a JSON round-trip (why it c
 \pset format aligned
 SELECT CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END AS r, name, detail FROM t.results ORDER BY id;
 SELECT count(*) FILTER (WHERE ok) AS passed, count(*) FILTER (WHERE NOT ok) AS failed, count(*) AS total FROM t.results;
+
+-- Exit non-zero when anything failed, so this works as a CI gate rather than
+-- something a human has to read. ON_ERROR_STOP is off for the body of this file
+-- (an assertion that a write is refused raises, and must not end the run), so it
+-- has to be turned back on here or psql would exit 0 despite the exception.
+\set ON_ERROR_STOP on
+DO $$
+DECLARE failed int; names text;
+BEGIN
+  SELECT count(*), string_agg(name, '; ') INTO failed, names FROM t.results WHERE NOT ok;
+  IF failed > 0 THEN
+    RAISE EXCEPTION '% assertion(s) failed: %', failed, names;
+  END IF;
+  RAISE NOTICE '---- % assertion(s), 0 failed ----', (SELECT count(*) FROM t.results);
+END $$;
