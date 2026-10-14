@@ -15,6 +15,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import PMKanbanBoard from '@/components/pm/PMKanbanBoard';
 import PMListView from '@/components/pm/PMListView';
 import { toast } from '@/hooks/use-toast';
+import { friendlyError } from '@/lib/errors';
 
 const allStatuses: PMStatus[] = ['Pending', 'Assigned', 'Completed'];
 
@@ -60,7 +61,7 @@ export default function PMSchedules() {
       await updatePMSchedule(pmId, { assignedTechnician: tech, status: 'Assigned' });
     } catch (error) {
       console.error('Failed to assign technician:', error);
-      toast({ title: 'Assignment failed', description: error instanceof Error ? error.message : 'Could not assign technician', variant: 'destructive' });
+      toast({ title: 'Assignment failed', description: friendlyError(error, 'Could not assign technician'), variant: 'destructive' });
     }
   };
 
@@ -69,7 +70,7 @@ export default function PMSchedules() {
       await updatePMSchedule(pmId, { status });
     } catch (error) {
       console.error('Failed to update PM status:', error);
-      toast({ title: 'Update failed', description: error instanceof Error ? error.message : 'Could not update PM status', variant: 'destructive' });
+      toast({ title: 'Update failed', description: friendlyError(error, 'Could not update PM status'), variant: 'destructive' });
     }
   };
 

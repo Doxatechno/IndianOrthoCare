@@ -6,7 +6,7 @@ import { Card } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { RefreshCw, Search, ShoppingCart, CheckCircle2, Clock, TrendingUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
-import { errorMessage, type SyncSalesOrdersResult } from '@/lib/errors';
+import { friendlyError, type SyncSalesOrdersResult } from '@/lib/errors';
 
 type SalesOrder = {
   id: string;
@@ -55,7 +55,7 @@ export default function SalesOrders() {
         throw new Error(data?.error || 'Unknown error');
       }
     } catch (err) {
-      toast({ title: 'Sync failed', description: errorMessage(err, 'Could not sync sales orders'), variant: 'destructive' });
+      toast({ title: 'Sync failed', description: friendlyError(err, 'Could not sync sales orders'), variant: 'destructive' });
     } finally {
       setSyncing(false);
     }

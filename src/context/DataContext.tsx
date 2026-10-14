@@ -23,7 +23,10 @@ type PMRow = Tables['pm_schedules']['Row'];
 type TechnicianRow = Tables['technicians']['Row'];
 
 type CustomerInput = Omit<Customer, 'id' | 'createdAt'>;
-type EquipmentInput = Pick<Equipment, 'name' | 'modelNumber' | 'serialNumber' | 'customerId'>;
+type EquipmentInput = Pick<
+  Equipment,
+  'name' | 'modelNumber' | 'serialNumber' | 'customerId' | 'installationDate' | 'warrantyStartDate' | 'warrantyEndDate'
+>;
 type TicketInput = Pick<InstallationTicket, 'equipmentId' | 'location' | 'remarks'>;
 type AMCInput = { equipmentId: string; startDate: string; endDate: string; price: number };
 type TicketUpdate = Partial<Pick<InstallationTicket, 'assignedTechnician' | 'status' | 'completedDate'>>;
@@ -307,9 +310,9 @@ export function DataProvider({ children }: { children: ReactNode }) {
         serial_number: input.serialNumber,
         customer_id: input.customerId,
         customer_name: customer?.name || '',
-        installation_date: null,
-        warranty_start_date: null,
-        warranty_end_date: null,
+        installation_date: input.installationDate ?? null,
+        warranty_start_date: input.warrantyStartDate ?? null,
+        warranty_end_date: input.warrantyEndDate ?? null,
       })
       .select()
       .single();

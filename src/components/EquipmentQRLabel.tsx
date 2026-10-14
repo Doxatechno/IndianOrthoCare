@@ -18,7 +18,14 @@ interface Props {
 
 export default function EquipmentQRLabel({ open, onOpenChange, equipment }: Props) {
   const labelRef = useRef<HTMLDivElement>(null);
-  const baseUrl = 'https://meditech-care.lovable.app';
+  // Derive the origin the label points at from wherever the app is actually
+  // served. Hard-coding a host meant every printed label carried that one
+  // domain: wrong in any other environment, and if the app ever moves to a
+  // different domain every label already attached to equipment stops working
+  // and can only be fixed by reprinting. VITE_PUBLIC_APP_URL allows an
+  // override for the case where labels are printed from a different host than
+  // the one customers scan into.
+  const baseUrl = import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin;
   const ticketUrl = `${baseUrl}/raise-ticket/${equipment.id}`;
 
   const handlePrint = () => {

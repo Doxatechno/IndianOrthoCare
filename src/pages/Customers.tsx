@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
+import { friendlyError } from '@/lib/errors';
 
 const emptyForm = { name: '', contactPerson: '', phone: '', email: '', address: '' };
 
@@ -47,7 +48,7 @@ export default function Customers() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to save customer:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not save customer');
+      toast.error(friendlyError(error, 'Could not save customer'));
     }
   };
 

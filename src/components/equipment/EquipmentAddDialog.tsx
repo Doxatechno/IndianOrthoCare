@@ -7,25 +7,47 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
+import { friendlyError } from '@/lib/errors';
 
 interface Props {
   customers: Customer[];
-  onAdd: (form: { name: string; modelNumber: string; serialNumber: string; customerId: string }) => Promise<void>;
+  onAdd: (form: {
+    name: string;
+    modelNumber: string;
+    serialNumber: string;
+    customerId: string;
+    installationDate: string | null;
+    warrantyStartDate: string | null;
+    warrantyEndDate: string | null;
+  }) => Promise<void>;
 }
 
 export default function EquipmentAddDialog({ customers, onAdd }: Props) {
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
+  const empty = {
+    name: '', modelNumber: '', serialNumber: '', customerId: '',
+    installationDate: '', warrantyStartDate: '', warrantyEndDate: '',
+  };
+  const [form, setForm] = useState(empty);
 
   const handleAdd = async () => {
     if (!form.name || !form.customerId) return;
+    if (form.warrantyStartDate && form.warrantyEndDate && form.warrantyEndDate < form.warrantyStartDate) {
+      toast.error('Warranty end date cannot be before the warranty start date.');
+      return;
+    }
     try {
-      await onAdd(form);
-      setForm({ name: '', modelNumber: '', serialNumber: '', customerId: '' });
+      await onAdd({
+        ...form,
+        installationDate: form.installationDate || null,
+        warrantyStartDate: form.warrantyStartDate || null,
+        warrantyEndDate: form.warrantyEndDate || null,
+      });
+      setForm(empty);
       setOpen(false);
     } catch (error) {
       console.error('Failed to add equipment:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not add equipment');
+      toast.error(friendlyError(error, 'Could not add equipment'));
     }
   };
 
@@ -59,6 +81,37 @@ export default function EquipmentAddDialog({ customers, onAdd }: Props) {
                 {customers.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
               </SelectContent>
             </Select>
+          </div>
+          <div>
+            <Label className="text-xs font-semibold text-muted-foreground">Installation Date</Label>
+            <Input
+              type="date"
+              className="mt-1.5 rounded-xl"
+              value={form.installationDate}
+              onChange={e => {
+                const installationDate = e.target.value;
+                // Warranty normally runs from the installation/handover date, so
+                // offer that as the default start rather than making the user
+                // retype it.
+                setForm(f => ({
+                  ...f,
+                  installationDate,
+                  warrantyStartDate: f.warrantyStartDate || installationDate,
+                }));
+              }}
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground">Warranty Start</Label>
+              <Input type="date" className="mt-1.5 rounded-xl" value={form.warrantyStartDate}
+                onChange={e => setForm({ ...form, warrantyStartDate: e.target.value })} />
+            </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground">Warranty End</Label>
+              <Input type="date" className="mt-1.5 rounded-xl" value={form.warrantyEndDate}
+                onChange={e => setForm({ ...form, warrantyEndDate: e.target.value })} />
+            </div>
           </div>
           <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Add Equipment</Button>
         </div>

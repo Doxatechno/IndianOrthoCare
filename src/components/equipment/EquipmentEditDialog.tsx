@@ -42,6 +42,31 @@ export default function EquipmentEditDialog({ open, onOpenChange, editForm, setE
                 </SelectContent>
               </Select>
             </div>
+            <div>
+              <Label className="text-xs font-semibold text-muted-foreground">Installation Date</Label>
+              <Input
+                type="date"
+                className="mt-1.5 rounded-xl"
+                value={editForm.installationDate ?? ''}
+                onChange={e => setEditForm({
+                  ...editForm,
+                  installationDate: e.target.value || null,
+                  warrantyStartDate: editForm.warrantyStartDate ?? (e.target.value || null),
+                })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Warranty Start</Label>
+                <Input type="date" className="mt-1.5 rounded-xl" value={editForm.warrantyStartDate ?? ''}
+                  onChange={e => setEditForm({ ...editForm, warrantyStartDate: e.target.value || null })} />
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Warranty End</Label>
+                <Input type="date" className="mt-1.5 rounded-xl" value={editForm.warrantyEndDate ?? ''}
+                  onChange={e => setEditForm({ ...editForm, warrantyEndDate: e.target.value || null })} />
+              </div>
+            </div>
             <Button onClick={onSave} className="w-full mt-3 rounded-xl h-11 font-semibold">Save Changes</Button>
           </div>
         )}

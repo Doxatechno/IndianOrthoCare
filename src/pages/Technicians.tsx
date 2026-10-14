@@ -9,7 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { errorMessage } from '@/lib/errors';
+import { friendlyError } from '@/lib/errors';
 
 const ROLE_CONFIG: Record<TechnicianRole, { icon: typeof Crown; color: string; bg: string }> = {
   'Service Head': { icon: Crown, color: 'text-amber-600', bg: 'bg-amber-500/10' },
@@ -64,7 +64,7 @@ export default function Technicians() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to add technician:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not add technician');
+      toast.error(friendlyError(error, 'Could not add technician'));
     }
   };
 
@@ -80,7 +80,7 @@ export default function Technicians() {
       setEditDialogOpen(false);
     } catch (error) {
       console.error('Failed to update technician:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not update technician');
+      toast.error(friendlyError(error, 'Could not update technician'));
     }
   };
 
@@ -123,7 +123,7 @@ export default function Technicians() {
       toast.success(`Login created for ${credForm.techName}`);
       setCredDialogOpen(false);
     } catch (err) {
-      toast.error(errorMessage(err, 'Failed to create login'));
+      toast.error(friendlyError(err, 'Failed to create login'));
     } finally {
       setCredLoading(false);
     }

@@ -12,6 +12,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import StatusBadge from '@/components/StatusBadge';
 import { sb } from '@/integrations/supabase/untyped';
 import { toast } from 'sonner';
+import { friendlyError } from '@/lib/errors';
 
 const allStatuses: AMCStatus[] = ['Quotation Sent', 'PO Released', 'Invoice Generated', 'Payment Received'];
 
@@ -137,7 +138,7 @@ export default function AMCContracts() {
       );
     } catch (err) {
       console.error('Failed to create renewal contracts:', err);
-      toast.error(err instanceof Error ? err.message : 'Could not create renewal contracts');
+      toast.error(friendlyError(err, 'Could not create renewal contracts'));
     } finally {
       setAutoCreating(false);
     }
@@ -156,7 +157,13 @@ export default function AMCContracts() {
       const wEnd = warrantyMap.get(a.equipmentId);
       const daysLeft = getWarrantyDaysLeft(wEnd);
       let matchesWarranty = true;
-      if (warrantyFilter === 'all') matchesWarranty = daysLeft !== null && daysLeft >= 0 && daysLeft <= 180;
+      // 'all' is labelled "Active & Expiring" but was implemented as 0..180 days,
+      // i.e. expiring only - it excluded the "Active (>180d)" category its own label
+      // promises. A contract created against equipment with a longer warranty was
+      // therefore invisible in the default view the moment it was saved. It now means
+      // everything that is not already expired, including equipment with no warranty
+      // date recorded yet.
+      if (warrantyFilter === 'all') matchesWarranty = daysLeft === null || daysLeft >= 0;
       else if (warrantyFilter === 'all_including_expired') matchesWarranty = true;
       else if (warrantyFilter === 'expired') matchesWarranty = daysLeft !== null && daysLeft < 0;
       else if (warrantyFilter === 'critical') matchesWarranty = daysLeft !== null && daysLeft >= 0 && daysLeft <= 30;
@@ -181,6 +188,18 @@ export default function AMCContracts() {
 
   const handleAdd = async () => {
     if (!form.equipmentId) return;
+    if (!form.startDate || !form.endDate) {
+      toast.error('Enter both a start and an end date.');
+      return;
+    }
+    if (form.endDate < form.startDate) {
+      toast.error('The contract end date cannot be before its start date.');
+      return;
+    }
+    if (Number(form.price) < 0) {
+      toast.error('The contract value cannot be negative.');
+      return;
+    }
     try {
       await addAMCContract({
         equipmentId: form.equipmentId,
@@ -199,7 +218,7 @@ export default function AMCContracts() {
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to create AMC contract:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not create AMC contract');
+      toast.error(friendlyError(error, 'Could not create AMC contract'));
     }
   };
 
@@ -213,7 +232,7 @@ export default function AMCContracts() {
       await updateAMCStatus(amcId, status);
     } catch (error) {
       console.error('Failed to update AMC status:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not update status');
+      toast.error(friendlyError(error, 'Could not update status'));
     }
   };
 
@@ -416,7 +435,10 @@ export default function AMCContracts() {
                 <Select value={form.equipmentId} onValueChange={v => setForm({ ...form, equipmentId: v })}>
                   <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue placeholder="Select equipment" /></SelectTrigger>
                   <SelectContent>
-                    {equipment.filter(e => e.installationDate).map(e => <SelectItem key={e.id} value={e.id}>{e.name} — {e.customerName}</SelectItem>)}
+                    {/* Previously filtered on installationDate, which no screen could set, so
+                        equipment created in the app was never selectable and could never be
+                        placed under a contract. Any equipment may now be contracted. */}
+                    {equipment.map(e => <SelectItem key={e.id} value={e.id}>{e.name} — {e.customerName}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>

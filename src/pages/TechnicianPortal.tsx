@@ -10,6 +10,7 @@ import {
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import type { TicketStatus, PMStatus } from '@/data/types';
+import { friendlyError } from '@/lib/errors';
 
 type TabType = 'tickets' | 'pm' | 'activity';
 
@@ -62,7 +63,7 @@ export default function TechnicianPortal() {
       await updateTicket(ticketId, { status: status as TicketStatus });
     } catch (error) {
       console.error('Failed to update ticket status:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not update this ticket');
+      toast.error(friendlyError(error, 'Could not update this ticket'));
     }
   };
 
@@ -71,7 +72,7 @@ export default function TechnicianPortal() {
       await updatePMSchedule(pmId, { status: status as PMStatus });
     } catch (error) {
       console.error('Failed to update PM status:', error);
-      toast.error(error instanceof Error ? error.message : 'Could not update this PM schedule');
+      toast.error(friendlyError(error, 'Could not update this PM schedule'));
     }
   };
 

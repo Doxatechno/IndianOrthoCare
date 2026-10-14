@@ -4,7 +4,7 @@ import { ShoppingCart, ArrowUpRight, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/hooks/use-toast';
-import { errorMessage, type SyncSalesOrdersResult } from '@/lib/errors';
+import { friendlyError, type SyncSalesOrdersResult } from '@/lib/errors';
 
 type Row = {
   id: string;
@@ -47,7 +47,7 @@ export default function SalesOrdersWidget() {
         await load();
       } else throw new Error(data?.error || 'Sync failed');
     } catch (err) {
-      toast({ title: 'Sync failed', description: errorMessage(err, 'Could not sync sales orders'), variant: 'destructive' });
+      toast({ title: 'Sync failed', description: friendlyError(err, 'Could not sync sales orders'), variant: 'destructive' });
     } finally {
       setSyncing(false);
     }
