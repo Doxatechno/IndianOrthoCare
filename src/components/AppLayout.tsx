@@ -24,7 +24,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { loadError } = useData();
+  const { loadError, truncated } = useData();
 
   const currentPage = navItems.find(item => item.path === location.pathname)?.label || 'Dashboard';
 
@@ -156,6 +156,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <span className="font-semibold">Could not load data.</span>{' '}
               <span className="text-destructive/90">
                 What you see below may be incomplete. {loadError}
+              </span>
+            </div>
+          )}
+          {truncated.length > 0 && (
+            <div
+              role="status"
+              className="mb-4 rounded-xl border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground"
+            >
+              <span className="font-semibold">Showing a partial list.</span>{' '}
+              <span className="text-muted-foreground">
+                {truncated.join(', ')} reached the maximum number of rows this screen loads, so some
+                records are not shown. Use search and filters to narrow what you need.
               </span>
             </div>
           )}

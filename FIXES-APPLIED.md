@@ -6,6 +6,9 @@ Branch `claude/confident-goldberg-oorfxc`. Finding IDs refer to the audit
 The audit itself changed nothing — it was report-only, as instructed. These fixes were made
 afterwards, on explicit instruction to correct what was found.
 
+All 35 defects the audit raised are now fixed. The 46 requirements that were never
+built are unchanged and remain a separate build programme.
+
 ## Verification after the fixes
 
 | Gate | Result |
@@ -13,17 +16,29 @@ afterwards, on explicit instruction to correct what was found.
 | `tsc --noEmit` | clean |
 | `eslint` | **0 problems** (was 45) |
 | `vitest` | 27 passed |
-| `playwright` | 13 passed |
-| Authorization suite (`npm run test:rls`) | **44 assertions, 0 failed** |
+| Authorization + integrity suite (`supabase/tests/authorization_and_integrity.sql`) | **63 assertions, 0 failed** |
 | Production build | clean |
-| Migrations | all 21 apply cleanly to a fresh database |
+| Migrations | all 24 apply cleanly to a database built from the migrations alone |
+| Schema shape on that database | 9 CHECK constraints · 9 foreign keys · 35 indexes · 22 triggers · **0 policies granting `anon` anything** |
 
-The equipment → AMC → PM chain was re-tested end to end in a real browser: dates captured and
-persisted, duplicate serial refused case-insensitively with a readable message, new equipment
-selectable for a contract, a bad contract refused with the reason shown, and **Payment Received
-generating exactly four quarterly visits** (2026-10-01, 2027-01-01, 2027-04-01, 2027-07-01).
+The 63 assertions run against a database built from nothing but the repo migrations, and cover
+the anonymous surface (8 reads blocked, 3 writes blocked, QR lookup still working and leaking
+nothing for an unknown id), technician scope (18 assertions: own tickets, PM visits, equipment,
+customers and contracts only; cannot read the audit log; cannot reassign work to themselves;
+cannot grant themselves admin), a signed-in user with no role (sees nothing, writes nothing),
+admin reach, the 9 integrity constraints, the two immutability rules, the audit trail's
+old/new values, and the concurrency token.
 
-## Fixed — 24 findings
+The equipment → AMC → PM chain was re-tested end to end in a real browser, 10 of 10 passing:
+dates captured and persisted, duplicate serial refused case-insensitively with a readable
+message, new equipment selectable for a contract, a bad contract refused with the reason shown,
+and **Payment Received generating exactly four quarterly visits** (2026-10-01, 2027-01-01,
+2027-04-01, 2027-07-01). Concurrency was then tested in both directions: two consecutive edits
+of one record with no reload between them both land (`row_version` 5 → 6 → 7), a genuine
+out-of-band edit is refused rather than silently overwritten, and the same change applies after
+a reload.
+
+## Fixed — first batch, 24 findings
 
 | Finding | What changed |
 |---|---|
@@ -55,22 +70,39 @@ generating exactly four quarterly visits** (2026-10-01, 2027-01-01, 2027-04-01, 
 | F-46 Low | Lint backlog cleared, 45 → 0 |
 | F-49 High | Technician provisioning grants the `technician` role; migration backfills existing accounts |
 
-## Two defects found while verifying these fixes
+## Fixed — second batch, the 11 that were outstanding
 
-Neither was in the audit; both were found by testing the fixes rather than assuming they worked.
+| Finding | What changed |
+|---|---|
+| F-07 High | `technician_sees_equipment()` plus narrowed SELECT policies: a technician now reads only the equipment, customers and contracts attached to work assigned to them, instead of every row in those tables |
+| F-08 High | Password reset: `requestPasswordReset` / `completePasswordReset` and a `/reset-password` landing page handling the `PASSWORD_RECOVERY` event |
+| F-20 Medium | A load that stalls for 12 s stops showing a blank screen and offers "Try again" |
+| F-24 Low | A contract whose period has already ended saves as a historical record, with a warning rather than silence |
+| F-27 High | `rename_customer()` does the whole cascade in one server-side transaction; it used to be four round trips with no way to roll back a partial failure |
+| **F-28 High** | **Optimistic concurrency on an integer `row_version`**, bumped by a trigger and guarded on every single-row update — see the note below on why `updated_at` cannot do this job |
+| F-29 Medium | `usePagination` + `PaginationBar`, 25 rows a page, on equipment, tickets and customers; whole-table loads capped at 2000 rows with a banner when a list is incomplete |
+| F-33 High | `audit_log` written by an AFTER trigger on 7 tables, storing `{column: {from, to}}` diffs, readable by admins only, and not bypassable from the UI or a direct API call |
+| F-35 Medium | Coverage type (AMC/CMC/CAMC), visits per year and billing frequency are now captured, and PM generation honours the visit frequency instead of always assuming four |
+| F-45 Low | `public/_redirects` and `vercel.json` SPA rewrites |
+| F-50 High | A paid contract and a completed ticket can no longer be deleted; every edit to them is in the audit log. Full reversal entries still need a credit-note workflow that does not exist — a client decision |
+
+## Four defects found while verifying these fixes
+
+None was in the audit; all four were found by testing the fixes rather than assuming they worked.
 
 | Defect | What was wrong |
 |---|---|
 | Database errors never reached the user | `errorMessage` read only `err instanceof Error`, but supabase-js rejects with a plain `PostgrestError` object. Every database error fell through to a generic fallback — including the new constraint violations. Now reads `message`/`details`/`hint`, and `friendlyError` translates constraint names into operator-readable text |
 | A new AMC vanished from the list | The default filter is labelled "Active & Expiring" but was implemented as `0..180 days` — expiring only, excluding the "Active (>180d)" category its own label promises. A contract on equipment with a longer warranty disappeared the moment it was saved. Now means everything not already expired |
+| `updated_at` cannot be a version token | The first cut of F-28 guarded writes with `updated_at`. Postgres stores timestamptz to microseconds (`…57.744874+00`) but the API serialises it to milliseconds (`…57.744Z`), so a guard on the value the browser was handed matched **zero rows every time** — and because a filter miss returns HTTP 200 with an empty body, every guarded write was reported to the user as somebody else's concurrent edit. Replaced with an integer `row_version`, which round-trips through JSON exactly |
+| Creating an AMC made the next edit of it impossible | The AMC page inserted the contract, then patched `warranty_end_date` into it with a second write, located by re-querying for "the newest contract on this equipment" — the wrong row as soon as a second contract existed, and a write the cache never saw. The warranty date is now part of the insert. The same pattern in the quotation screen (raw price write, then a guarded status write on the version the price write had just superseded) is now one guarded write, `setAMCQuotation` |
 
 ## Still outstanding
 
-**Not fixed — defects (11).** F-07 technician read scope · F-08 no password reset · F-20 blank
-screen when the backend is unreachable · F-24 past-date warning · F-27 non-transactional rename
-cascade · F-28 lost update under concurrent edits · F-29 no pagination · F-33 no audit trail ·
-F-35 AMC has no coverage type / visit frequency / billing schedule · F-45 SPA refresh fallback
-(needs the real hosting to confirm) · F-50 nothing is "posted", so any admin can edit anything.
+**Defects: none.** All 35 are fixed. Two carry a caveat rather than a gap: F-45 can only be
+confirmed on the real hosting (the rewrite files are in the repo but the host has to honour
+them), and F-50 blocks deletion and logs every edit but stops short of true posted-document
+immutability with reversal entries, which needs a credit-note workflow nobody has specified yet.
 
 **Not fixed — never built (46 requirements).** Four whole modules (Inventory, Purchase, Accounts,
 HR) plus approval workflow, the 11 reports, notifications, attachments and file upload, data
@@ -90,3 +122,7 @@ separately.
 5. **Purge the demo rows** the old seeder already wrote.
 6. **Re-run `supabase gen types typescript`** and delete `src/integrations/supabase/untyped.ts`.
 7. **Reprint QR labels** if any were printed before F-17, since the old ones encode the old host.
+8. **Set `VITE_PUBLIC_APP_URL`** in the hosting environment if the app is served from a domain
+   other than the one labels should point at.
+9. **Confirm the SPA rewrite on the real host.** `_redirects` covers Netlify-style hosting and
+   `vercel.json` covers Vercel; another host needs its own equivalent.

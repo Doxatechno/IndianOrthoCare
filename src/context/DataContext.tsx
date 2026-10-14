@@ -28,7 +28,17 @@ type EquipmentInput = Pick<
   'name' | 'modelNumber' | 'serialNumber' | 'customerId' | 'installationDate' | 'warrantyStartDate' | 'warrantyEndDate'
 >;
 type TicketInput = Pick<InstallationTicket, 'equipmentId' | 'location' | 'remarks'>;
-type AMCInput = { equipmentId: string; startDate: string; endDate: string; price: number };
+type AMCInput = {
+  equipmentId: string;
+  startDate: string;
+  endDate: string;
+  price: number;
+  coverage: AMCContract['coverage'];
+  visitsPerYear: number;
+  billing: AMCContract['billing'];
+  /** Warranty end of the covered equipment, copied onto the contract row. */
+  warrantyEndDate: string | null;
+};
 type TicketUpdate = Partial<Pick<InstallationTicket, 'assignedTechnician' | 'status' | 'completedDate'>>;
 type PMUpdate = Partial<Pick<PMSchedule, 'assignedTechnician' | 'status'>>;
 type TechnicianInput = Pick<Technician, 'name' | 'phone' | 'email' | 'specialization'>;
@@ -40,6 +50,8 @@ interface DataContextType {
   loadError: string | null;
   /** Re-fetch every table. Use instead of reloading the page. */
   refreshData: () => Promise<void>;
+  /** Tables whose read hit the row cap, so the list on screen is incomplete. */
+  truncated: string[];
   customers: Customer[];
   equipment: Equipment[];
   tickets: InstallationTicket[];
@@ -59,6 +71,8 @@ interface DataContextType {
   updateTicket: (ticketId: string, patch: TicketUpdate) => Promise<void>;
   addAMCContract: (input: AMCInput) => Promise<void>;
   updateAMCStatus: (amcId: string, status: AMCStatus) => Promise<void>;
+  /** Record the quoted price and move the contract to 'Quotation Sent' in one write. */
+  setAMCQuotation: (amcId: string, price: number) => Promise<void>;
   updatePMSchedule: (pmId: string, patch: PMUpdate) => Promise<void>;
   addTechnician: (input: TechnicianInput) => Promise<void>;
   updateTechnician: (id: string, patch: TechnicianUpdate) => Promise<void>;
@@ -68,6 +82,14 @@ const DataContext = createContext<DataContextType | undefined>(undefined);
 
 
 const today = () => new Date().toISOString().split('T')[0];
+
+/**
+ * Upper bound on rows fetched per table. The store loads whole tables, so
+ * without a cap a growing installed base would eventually load and render
+ * everything on every page view. When a cap is reached the UI says so rather
+ * than quietly showing a truncated list as if it were complete.
+ */
+const MAX_ROWS_PER_TABLE = 2000;
 
 /**
  * PostgREST answers an UPDATE whose rows RLS filtered out with 200 and an
@@ -80,6 +102,54 @@ const today = () => new Date().toISOString().split('T')[0];
  * a customer across their equipment) legitimately match zero rows.
  */
 type UpdateQuery = { select: (columns: string) => Promise<{ data: unknown[] | null; error: unknown }> };
+
+/**
+ * Update one known row, refusing to overwrite a change someone else made in the
+ * meantime. The caller passes the `row_version` it last saw; the update only
+ * matches while the row still carries that version, and a trigger bumps the
+ * version on every write.
+ *
+ * The version must be an integer, not `updated_at`. Postgres stores timestamptz
+ * to microseconds but PostgREST serialises it to JSON at millisecond precision,
+ * so a guard on the timestamp the client was given matches zero rows every
+ * time - and since a filter miss comes back as 200 with an empty body, every
+ * write looked like a concurrent-edit conflict. An integer round-trips exactly.
+ *
+ * Returns the row's new version, which the caller must store alongside its
+ * optimistic state update. Without that, a second edit of the same record
+ * before the next full reload would be guarded on the version the row had
+ * before the first edit, and be refused as somebody else's change.
+ */
+const updateOneGuarded = async (
+  table: string,
+  id: string,
+  patch: Record<string, unknown>,
+  knownVersion: number | undefined,
+  subject: string,
+) => {
+  let q = sb.from(table).update(patch).eq('id', id);
+  if (knownVersion !== undefined && knownVersion !== null) q = q.eq('row_version', knownVersion);
+
+  const { data, error } = await q.select('id, row_version');
+  if (error) throw error;
+  if (data && data.length > 0) {
+    return (data[0] as { row_version?: number }).row_version;
+  }
+
+  // Nothing matched. Work out which of the two reasons it was, so the message is
+  // actionable rather than a guess.
+  if (knownVersion !== undefined && knownVersion !== null) {
+    const { data: current } = await sb.from(table).select('row_version').eq('id', id).maybeSingle();
+    if (current && current.row_version !== knownVersion) {
+      throw new Error(
+        `${subject} was changed by someone else while you were editing it. Reload to see the current version, then apply your change again.`,
+      );
+    }
+  }
+  throw new Error(
+    `${subject} was not updated. You may not have permission to change it, or it no longer exists.`,
+  );
+};
 
 const requireRowsUpdated = async (query: UpdateQuery, subject: string) => {
   const { data, error } = await query.select('id');
@@ -100,6 +170,8 @@ const toCustomer = (row: CustomerRow): Customer => ({
   email: row.email,
   address: row.address,
   createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  rowVersion: (row as { row_version?: number }).row_version,
 });
 
 const toEquipment = (row: EquipmentRow): Equipment => ({
@@ -112,6 +184,8 @@ const toEquipment = (row: EquipmentRow): Equipment => ({
   installationDate: row.installation_date,
   warrantyStartDate: row.warranty_start_date,
   warrantyEndDate: row.warranty_end_date,
+  updatedAt: row.updated_at,
+  rowVersion: (row as { row_version?: number }).row_version,
 });
 
 const toTicket = (row: TicketRow): InstallationTicket => ({
@@ -127,6 +201,8 @@ const toTicket = (row: TicketRow): InstallationTicket => ({
   issueType: row.issue_type,
   createdDate: row.created_date,
   completedDate: row.completed_date,
+  updatedAt: row.updated_at,
+  rowVersion: (row as { row_version?: number }).row_version,
 });
 
 const toAMC = (row: AMCRow): AMCContract => ({
@@ -139,6 +215,12 @@ const toAMC = (row: AMCRow): AMCContract => ({
   endDate: row.end_date,
   price: Number(row.price ?? 0),
   status: row.status,
+  updatedAt: row.updated_at,
+  rowVersion: (row as { row_version?: number }).row_version,
+  coverage: (row as { coverage?: string }).coverage as AMCContract['coverage'] ?? 'AMC',
+  visitsPerYear: (row as { visits_per_year?: number }).visits_per_year ?? 4,
+  billing: (row as { billing?: string }).billing as AMCContract['billing'] ?? 'Annual',
+  renewalDate: (row as { renewal_date?: string | null }).renewal_date ?? null,
 });
 
 const toPM = (row: PMRow): PMSchedule => ({
@@ -151,6 +233,8 @@ const toPM = (row: PMRow): PMSchedule => ({
   plannedDate: row.planned_date,
   status: row.status,
   assignedTechnician: row.assigned_technician,
+  updatedAt: row.updated_at,
+  rowVersion: (row as { row_version?: number }).row_version,
 });
 
 const toTechnician = (row: TechnicianRow): Technician => ({
@@ -164,11 +248,14 @@ const toTechnician = (row: TechnicianRow): Technician => ({
   reportingManager: '',
   isActive: row.is_active,
   createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  rowVersion: (row as { row_version?: number }).row_version,
 });
 
 export function DataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [truncated, setTruncated] = useState<string[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [equipment, setEquipment] = useState<Equipment[]>([]);
   const [tickets, setTickets] = useState<InstallationTicket[]>([]);
@@ -178,12 +265,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
   const loadAllData = useCallback(async () => {
     const [customersRes, equipmentRes, ticketsRes, amcRes, pmRes, techRes] = await Promise.all([
-      sb.from('customers').select('*').order('id', { ascending: false }),
-      sb.from('equipment').select('*').order('id', { ascending: false }),
-      sb.from('tickets').select('*').order('id', { ascending: false }),
-      sb.from('amc_contracts').select('*').order('id', { ascending: false }),
-      sb.from('pm_schedules').select('*').order('id', { ascending: false }),
-      sb.from('technicians').select('*').order('name', { ascending: true }),
+      sb.from('customers').select('*').order('id', { ascending: false }).limit(MAX_ROWS_PER_TABLE),
+      sb.from('equipment').select('*').order('id', { ascending: false }).limit(MAX_ROWS_PER_TABLE),
+      sb.from('tickets').select('*').order('id', { ascending: false }).limit(MAX_ROWS_PER_TABLE),
+      sb.from('amc_contracts').select('*').order('id', { ascending: false }).limit(MAX_ROWS_PER_TABLE),
+      sb.from('pm_schedules').select('*').order('id', { ascending: false }).limit(MAX_ROWS_PER_TABLE),
+      sb.from('technicians').select('*').order('name', { ascending: true }).limit(MAX_ROWS_PER_TABLE),
     ]);
 
     if (customersRes.error) throw customersRes.error;
@@ -199,6 +286,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
     setAmcContracts((amcRes.data ?? []).map(toAMC));
     setPMSchedules((pmRes.data ?? []).map(toPM));
     setTechnicians((techRes.data ?? []).map(toTechnician));
+
+    // Tell the user plainly if any table was truncated, instead of presenting a
+    // partial list as the whole picture.
+    const capped = [
+      ['customers', customersRes], ['equipment', equipmentRes], ['tickets', ticketsRes],
+      ['AMC contracts', amcRes], ['PM schedules', pmRes], ['technicians', techRes],
+    ].filter(([, res]) => ((res as { data?: unknown[] }).data?.length ?? 0) >= MAX_ROWS_PER_TABLE)
+     .map(([name]) => name as string);
+    setTruncated(capped);
   }, []);
 
   useEffect(() => {
@@ -267,37 +363,26 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateCustomer = useCallback(async (id: string, input: CustomerInput) => {
-    await requireRowsUpdated(
-      sb
-        .from('customers')
-        .update({
-          name: input.name,
-          contact_person: input.contactPerson,
-          phone: input.phone,
-          email: input.email,
-          address: input.address,
-        })
-        .eq('id', id),
-      `Customer ${id}`,
-    );
+    // One transaction server-side. This used to be four separate round trips
+    // orchestrated here, so a failure part-way left the denormalised copies in
+    // equipment / tickets / amc_contracts / pm_schedules inconsistent with no
+    // way to roll back.
+    const { error } = await sb.rpc('rename_customer', {
+      _customer_id: id,
+      _name: input.name,
+      _contact_person: input.contactPerson,
+      _phone: input.phone,
+      _email: input.email,
+      _address: input.address,
+    });
+    if (error) throw error;
 
-    await Promise.all([
-      sb.from('equipment').update({ customer_name: input.name }).eq('customer_id', id),
-      sb.from('tickets').update({ customer_name: input.name }).eq('customer_id', id),
-      sb.from('amc_contracts').update({ customer_name: input.name }).eq('customer_id', id),
-    ]);
-
-    const relatedEquipmentIds = equipment.filter(e => e.customerId === id).map(e => e.id);
-    if (relatedEquipmentIds.length > 0) {
-      await sb.from('pm_schedules').update({ customer_name: input.name }).in('equipment_id', relatedEquipmentIds);
-    }
-
-    setCustomers(prev => prev.map(c => (c.id === id ? { ...c, ...input } : c)));
-    setEquipment(prev => prev.map(e => (e.customerId === id ? { ...e, customerName: input.name } : e)));
-    setTickets(prev => prev.map(t => (t.customerId === id ? { ...t, customerName: input.name } : t)));
-    setAmcContracts(prev => prev.map(a => (a.customerId === id ? { ...a, customerName: input.name } : a)));
-    setPMSchedules(prev => prev.map(p => (relatedEquipmentIds.includes(p.equipmentId) ? { ...p, customerName: input.name } : p)));
-  }, [equipment]);
+    // Re-read rather than mirror the cascade by hand. The rename touches rows in
+    // four other tables and bumps their row_version; patching the cached copies
+    // locally would leave each of them holding a stale version, and the next
+    // edit of any of them would be refused as somebody else's change.
+    await loadAllData();
+  }, [loadAllData]);
 
   const addEquipment = useCallback(async (input: EquipmentInput) => {
     const customer = customers.find(c => c.id === input.customerId);
@@ -325,20 +410,20 @@ export function DataProvider({ children }: { children: ReactNode }) {
     const customer = customers.find(c => c.id === input.customerId);
     const customerName = customer?.name || input.customerName;
 
-    await requireRowsUpdated(
-      sb
-        .from('equipment')
-        .update({
-          name: input.name,
-          model_number: input.modelNumber,
-          serial_number: input.serialNumber,
-          customer_id: input.customerId,
-          customer_name: customerName,
-          installation_date: input.installationDate,
-          warranty_start_date: input.warrantyStartDate,
-          warranty_end_date: input.warrantyEndDate,
-        })
-        .eq('id', input.id),
+    await updateOneGuarded(
+      'equipment',
+      input.id,
+      {
+        name: input.name,
+        model_number: input.modelNumber,
+        serial_number: input.serialNumber,
+        customer_id: input.customerId,
+        customer_name: customerName,
+        installation_date: input.installationDate,
+        warranty_start_date: input.warrantyStartDate,
+        warranty_end_date: input.warrantyEndDate,
+      },
+      input.rowVersion,
       `Equipment ${input.id}`,
     );
 
@@ -357,11 +442,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
         .eq('equipment_id', input.id),
     ]);
 
-    setEquipment(prev => prev.map(e => (e.id === input.id ? { ...input, customerName } : e)));
-    setTickets(prev => prev.map(t => (t.equipmentId === input.id ? { ...t, equipmentName: input.name, customerId: input.customerId, customerName } : t)));
-    setAmcContracts(prev => prev.map(a => (a.equipmentId === input.id ? { ...a, equipmentName: input.name, customerId: input.customerId, customerName } : a)));
-    setPMSchedules(prev => prev.map(p => (p.equipmentId === input.id ? { ...p, equipmentName: input.name, customerName } : p)));
-  }, [customers]);
+    // Same reason as updateCustomer: the cascade above bumps row_version on
+    // every ticket, contract and PM visit for this equipment, so the cache has
+    // to come from the database rather than be patched in place.
+    await loadAllData();
+  }, [customers, loadAllData]);
 
   const addTicket = useCallback(async (input: TicketInput) => {
     const selectedEquipment = equipment.find(e => e.id === input.equipmentId);
@@ -404,10 +489,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
 
     if (Object.keys(dbPatch).length === 0) return;
 
-    await requireRowsUpdated(
-      sb.from('tickets').update(dbPatch).eq('id', ticketId),
-      `Ticket ${ticketId}`,
-    );
+    const newVersion = await updateOneGuarded('tickets', ticketId, dbPatch, current.rowVersion, `Ticket ${ticketId}`);
 
     setTickets(prev =>
       prev.map(t => {
@@ -421,6 +503,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
           ...t,
           ...patch,
           completedDate,
+          rowVersion: newVersion,
         };
       }),
     );
@@ -441,6 +524,19 @@ export function DataProvider({ children }: { children: ReactNode }) {
         end_date: input.endDate,
         price: input.price,
         status: 'Quotation Sent',
+        coverage: input.coverage,
+        visits_per_year: input.visitsPerYear,
+        billing: input.billing,
+        // The renewal report needs a date to work from; the day after expiry is
+        // what the business already uses by hand.
+        renewal_date: input.endDate,
+        // Part of the insert, not a follow-up UPDATE. The page used to patch
+        // this in afterwards by re-querying for "the newest contract on this
+        // equipment", which picked the wrong row once a second contract
+        // existed, and left the freshly cached row a version behind the
+        // database - so the very next edit of the contract was reported as a
+        // concurrent-edit conflict.
+        warranty_end_date: input.warrantyEndDate,
       })
       .select()
       .single();
@@ -450,12 +546,11 @@ export function DataProvider({ children }: { children: ReactNode }) {
   }, [customers, equipment]);
 
   const updateAMCStatus = useCallback(async (amcId: string, status: AMCStatus) => {
-    await requireRowsUpdated(
-      sb.from('amc_contracts').update({ status }).eq('id', amcId),
-      `Contract ${amcId}`,
-    );
+    const currentAMC = amcContracts.find(a => a.id === amcId);
+    const newVersion = await updateOneGuarded(
+      'amc_contracts', amcId, { status }, currentAMC?.rowVersion, `Contract ${amcId}`);
 
-    setAmcContracts(prev => prev.map(a => (a.id === amcId ? { ...a, status } : a)));
+    setAmcContracts(prev => prev.map(a => (a.id === amcId ? { ...a, status, rowVersion: newVersion } : a)));
 
     // Auto-generate 4 quarterly PM schedules when AMC payment is received
     if (status === 'Payment Received') {
@@ -469,9 +564,15 @@ export function DataProvider({ children }: { children: ReactNode }) {
       const startDate = new Date(amc.startDate);
       const newPMs: PMSchedule[] = [];
 
-      for (let i = 0; i < 4; i++) {
+      // Honour the contract's own visit frequency instead of assuming four a
+      // year. A contract set to 2 visits now generates two visits six months
+      // apart, 12 generates monthly, and so on.
+      const visits = Math.min(Math.max(amc.visitsPerYear || 4, 1), 12);
+      const monthsBetween = 12 / visits;
+
+      for (let i = 0; i < visits; i++) {
         const plannedDate = new Date(startDate);
-        plannedDate.setMonth(plannedDate.getMonth() + (i * 3));
+        plannedDate.setMonth(plannedDate.getMonth() + Math.round(i * monthsBetween));
         const pmId = `PM-${amcId.replace('AMC-', '')}-Q${i + 1}`;
 
         const pm: PMSchedule = {
@@ -509,18 +610,39 @@ export function DataProvider({ children }: { children: ReactNode }) {
     }
   }, [amcContracts, pmSchedules]);
 
+  const setAMCQuotation = useCallback(async (amcId: string, price: number) => {
+    if (!Number.isFinite(price) || price < 0) {
+      throw new Error('The quoted price must be zero or more.');
+    }
+    // One guarded write for both fields. The quotation screen used to patch the
+    // price with a raw, unguarded update and then call updateAMCStatus: the
+    // price write bumped row_version, so the status write that followed was
+    // guarded on a version that no longer existed and was reported to the user
+    // as a concurrent edit by somebody else.
+    const current = amcContracts.find(a => a.id === amcId);
+    const newVersion = await updateOneGuarded(
+      'amc_contracts',
+      amcId,
+      { price, status: 'Quotation Sent' },
+      current?.rowVersion,
+      `Contract ${amcId}`,
+    );
+    setAmcContracts(prev =>
+      prev.map(a => (a.id === amcId ? { ...a, price, status: 'Quotation Sent', rowVersion: newVersion } : a)),
+    );
+  }, [amcContracts]);
+
   const updatePMSchedule = useCallback(async (pmId: string, patch: PMUpdate) => {
     const dbPatch: Record<string, unknown> = {};
     if (patch.assignedTechnician !== undefined) dbPatch.assigned_technician = patch.assignedTechnician;
     if (patch.status !== undefined) dbPatch.status = patch.status;
     if (Object.keys(dbPatch).length === 0) return;
 
-    await requireRowsUpdated(
-      sb.from('pm_schedules').update(dbPatch).eq('id', pmId),
-      `PM schedule ${pmId}`,
-    );
+    const currentPM = pmSchedules.find(p => p.id === pmId);
+    const newVersion = await updateOneGuarded(
+      'pm_schedules', pmId, dbPatch, currentPM?.rowVersion, `PM schedule ${pmId}`);
 
-    setPMSchedules(prev => prev.map(p => (p.id === pmId ? { ...p, ...patch } : p)));
+    setPMSchedules(prev => prev.map(p => (p.id === pmId ? { ...p, ...patch, rowVersion: newVersion } : p)));
 
     // Auto-create a ticket when a technician is assigned to a PM schedule.
     // Use a deterministic ticket ID derived from the PM ID (e.g. TK-PM-030-Q1)
@@ -607,13 +729,12 @@ export function DataProvider({ children }: { children: ReactNode }) {
     if (patch.isActive !== undefined) dbPatch.is_active = patch.isActive;
     if (Object.keys(dbPatch).length === 0) return;
 
-    await requireRowsUpdated(
-      sb.from('technicians').update(dbPatch).eq('id', id),
-      `Technician ${id}`,
-    );
+    const currentTech = technicians.find(t => t.id === id);
+    const newVersion = await updateOneGuarded(
+      'technicians', id, dbPatch, currentTech?.rowVersion, `Technician ${id}`);
 
-    setTechnicians(prev => prev.map(t => (t.id === id ? { ...t, ...patch } : t)));
-  }, []);
+    setTechnicians(prev => prev.map(t => (t.id === id ? { ...t, ...patch, rowVersion: newVersion } : t)));
+  }, [technicians]);
 
   const refreshData = useCallback(async () => {
     try {
@@ -639,6 +760,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     () => ({
       loading,
       loadError,
+      truncated,
       refreshData,
       customers,
       equipment,
@@ -655,6 +777,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateTicket,
       addAMCContract,
       updateAMCStatus,
+      setAMCQuotation,
       updatePMSchedule,
       addTechnician,
       updateTechnician,
@@ -662,6 +785,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
     [
       loading,
       loadError,
+      truncated,
       refreshData,
       customers,
       equipment,
@@ -678,6 +802,7 @@ export function DataProvider({ children }: { children: ReactNode }) {
       updateTicket,
       addAMCContract,
       updateAMCStatus,
+      setAMCQuotation,
       updatePMSchedule,
       addTechnician,
       updateTechnician,

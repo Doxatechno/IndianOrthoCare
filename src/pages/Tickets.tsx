@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { usePagination, PaginationBar } from '@/hooks/use-pagination';
 import { Search, Plus, Filter, ClipboardList } from 'lucide-react';
 import { InstallationTicket, TicketStatus } from '@/data/types';
 import { useData } from '@/context/DataContext';
@@ -29,6 +30,7 @@ export default function Tickets() {
     const matchStatus = statusFilter === 'all' || t.status === statusFilter;
     return matchSearch && matchStatus;
   });
+  const { page, setPage, pageCount, pageItems, total, from, to } = usePagination(filtered);
 
   const detailTicket = useMemo(
     () => data.find(ticket => ticket.id === detailTicketId) ?? null,
@@ -130,7 +132,7 @@ export default function Tickets() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border/40">
-              {filtered.map(t => (
+              {pageItems.map(t => (
                 <tr key={t.id} className="hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => setDetailTicketId(t.id)}>
                   <td className="px-5 py-3.5">
                     <p className="font-semibold text-foreground">{t.equipmentName}</p>
@@ -149,7 +151,7 @@ export default function Tickets() {
       </div>
 
       <div className="md:hidden space-y-3">
-        {filtered.map((t, i) => (
+        {pageItems.map((t, i) => (
           <div
             key={t.id}
             className="glass-card p-4 active:scale-[0.98] transition-all cursor-pointer animate-fade-in"
@@ -224,6 +226,8 @@ export default function Tickets() {
           )}
         </DialogContent>
       </Dialog>
+      <PaginationBar page={page} pageCount={pageCount} from={from} to={to}
+        total={total} onChange={setPage} noun="tickets" />
     </div>
   );
 }

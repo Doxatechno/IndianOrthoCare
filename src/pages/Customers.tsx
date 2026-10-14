@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { usePagination, PaginationBar } from '@/hooks/use-pagination';
 import { Plus, Search, Phone, Mail, MapPin, Building2, Pencil } from 'lucide-react';
 import { Customer } from '@/data/types';
 import { useData } from '@/context/DataContext';
@@ -22,6 +23,7 @@ export default function Customers() {
     c.name.toLowerCase().includes(search.toLowerCase()) ||
     c.contactPerson.toLowerCase().includes(search.toLowerCase())
   );
+  const { page, setPage, pageCount, pageItems, total, from, to } = usePagination(filtered);
 
   const openAdd = () => {
     setEditingId(null);
@@ -97,7 +99,7 @@ export default function Customers() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-        {filtered.map((c, i) => (
+        {pageItems.map((c, i) => (
           <div
             key={c.id}
             className="glass-card p-5 hover:-translate-y-1 transition-all duration-300 opacity-0 animate-fade-in"
@@ -132,6 +134,8 @@ export default function Customers() {
           </div>
         ))}
       </div>
+      <PaginationBar page={page} pageCount={pageCount} from={from} to={to}
+        total={total} onChange={setPage} noun="customers" />
     </div>
   );
 }

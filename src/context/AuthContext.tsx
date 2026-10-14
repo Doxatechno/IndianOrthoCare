@@ -16,6 +16,10 @@ interface AuthContextType {
   isAdmin: boolean;
   technicianId: string | null;
   signIn: (email: string, password: string) => Promise<{ error: string | null }>;
+  /** Send a password-reset link. Requires the redirect URL to be allow-listed in Supabase Auth settings. */
+  requestPasswordReset: (email: string) => Promise<{ error: string | null }>;
+  /** Set a new password for the session established by the reset link. */
+  completePasswordReset: (newPassword: string) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -80,6 +84,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return { error: error?.message ?? null };
   };
 
+  const requestPasswordReset = async (email: string) => {
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+    return { error: error?.message ?? null };
+  };
+
+  const completePasswordReset = async (newPassword: string) => {
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return { error: error?.message ?? null };
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setTechnicianId(null);
@@ -97,6 +113,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAdmin,
       technicianId,
       signIn,
+      requestPasswordReset,
+      completePasswordReset,
       signOut,
     }}>
       {children}

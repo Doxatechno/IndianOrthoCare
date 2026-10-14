@@ -4,13 +4,22 @@ import { useNavigate } from 'react-router-dom';
 import { Heart, LogIn, Eye, EyeOff, Stethoscope } from 'lucide-react';
 
 export default function TechnicianLogin() {
-  const { signIn } = useAuth();
+  const { signIn, requestPasswordReset } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleForgotPassword = async () => {
+    if (!email) { setError('Enter your email address first, then choose Forgot password.'); return; }
+    setError('');
+    const { error: err } = await requestPasswordReset(email);
+    if (err) { setError(err); return; }
+    setResetSent(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,6 +102,18 @@ export default function TechnicianLogin() {
             <LogIn size={18} />
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
+          <div className="text-center pt-1">
+            {resetSent ? (
+              <p className="text-xs text-white/80">
+                If that address has an account, a reset link is on its way. Check your inbox.
+              </p>
+            ) : (
+              <button type="button" onClick={handleForgotPassword}
+                className="text-xs text-white/60 underline hover:text-white transition-colors">
+                Forgot password?
+              </button>
+            )}
+          </div>
         </form>
 
         <p className="text-center text-xs text-gray-400 mt-6">

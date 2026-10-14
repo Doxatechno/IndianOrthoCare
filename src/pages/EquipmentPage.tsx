@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { usePagination, PaginationBar } from '@/hooks/use-pagination';
 import { Search, LayoutGrid, List, Cpu, Filter, Building2, Calendar, Shield } from 'lucide-react';
 import { Equipment } from '@/data/types';
 import { useData } from '@/context/DataContext';
@@ -80,6 +81,8 @@ export default function EquipmentPage() {
 
       return matchSearch && matchCustomer && matchYear && matchWarranty;
     }), [equipment, search, customerFilter, yearFilter, warrantyFilter]);
+
+  const { page, setPage, pageCount, pageItems, total, from, to } = usePagination(filtered);
 
   const handleEdit = (e: Equipment) => {
     setEditForm({ ...e });
@@ -233,7 +236,7 @@ export default function EquipmentPage() {
       {/* Grid View */}
       {view === 'grid' && (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((e, i) => (
+          {pageItems.map((e, i) => (
             <EquipmentCard key={e.id} equipment={e} index={i} onEdit={handleEdit} onQr={setQrEquipment} />
           ))}
         </div>
@@ -255,7 +258,7 @@ export default function EquipmentPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border/40">
-                {filtered.map((e) => {
+                {pageItems.map((e) => {
                   const ws = getWarrantyLabel(getWarrantyStatus(e));
                   return (
                     <tr key={e.id} className="hover:bg-secondary/30 transition-colors cursor-pointer" onClick={() => handleEdit(e)}>
@@ -286,13 +289,16 @@ export default function EquipmentPage() {
       {/* Mobile always shows grid */}
       {view === 'list' && (
         <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {filtered.map((e, i) => (
+          {pageItems.map((e, i) => (
             <EquipmentCard key={e.id} equipment={e} index={i} onEdit={handleEdit} onQr={setQrEquipment} />
           ))}
         </div>
       )}
 
       {/* Empty state */}
+      <PaginationBar page={page} pageCount={pageCount} from={from} to={to}
+        total={total} onChange={setPage} noun="equipment" />
+
       {filtered.length === 0 && (
         <div className="text-center py-16 text-muted-foreground">
           <Cpu size={48} className="mx-auto mb-4 opacity-30" />

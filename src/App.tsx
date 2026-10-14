@@ -16,6 +16,7 @@ import Technicians from "@/pages/Technicians";
 import TechnicianPortal from "@/pages/TechnicianPortal";
 import TechnicianLogin from "@/pages/TechnicianLogin";
 import AdminLogin from "@/pages/AdminLogin";
+import ResetPassword from "@/pages/ResetPassword";
 import TechProtectedRoute from "@/components/TechProtectedRoute";
 import AdminProtectedRoute from "@/components/AdminProtectedRoute";
 import RaiseTicket from "@/pages/RaiseTicket";
@@ -48,6 +49,7 @@ const App = () => (
           <Routes>
             <Route path="/login" element={<AdminLogin />} />
             <Route path="/technician-login" element={<TechnicianLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/raise-ticket/:equipmentId" element={<RaiseTicket />} />
             <Route path="/technician-portal" element={
               <TechProtectedRoute>

@@ -24,13 +24,14 @@ const stats = [
 ];
 
 export default function AdminLogin() {
-  const { signIn, user, isAdmin, isTechnician, loading, profileLoaded } = useAuth();
+  const { signIn, user, isAdmin, isTechnician, loading, profileLoaded, requestPasswordReset } = useAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
 
   useEffect(() => {
     if (loading || !profileLoaded) return;
@@ -44,6 +45,14 @@ export default function AdminLogin() {
       setError('Signed in, but this account has no access yet. Ask an administrator to grant it a role.');
     }
   }, [user, isAdmin, isTechnician, loading, profileLoaded, navigate]);
+
+  const handleForgotPassword = async () => {
+    if (!email) { setError('Enter your email address first, then choose Forgot password.'); return; }
+    setError('');
+    const { error: err } = await requestPasswordReset(email);
+    if (err) { setError(err); return; }
+    setResetSent(true);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -206,6 +215,18 @@ export default function AdminLogin() {
               <LogIn size={17} />
               {submitting ? 'Signing in...' : 'Sign In to Dashboard'}
             </button>
+          <div className="text-center pt-1">
+            {resetSent ? (
+              <p className="text-xs text-success">
+                If that address has an account, a reset link is on its way. Check your inbox.
+              </p>
+            ) : (
+              <button type="button" onClick={handleForgotPassword}
+                className="text-xs text-muted-foreground underline hover:text-foreground transition-colors">
+                Forgot password?
+              </button>
+            )}
+          </div>
           </form>
 
           {/* Trust badges */}

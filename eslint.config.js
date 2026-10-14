@@ -35,8 +35,9 @@ export default tseslint.config(
   },
   {
     // Context modules legitimately export a provider component next to its
-    // hook and types.
-    files: ["src/context/*.tsx"],
+    // hook and types; so does the pagination module, which pairs a hook with
+    // the control that renders it.
+    files: ["src/context/*.tsx", "src/hooks/use-pagination.tsx"],
     rules: { "react-refresh/only-export-components": "off" },
   },
   {

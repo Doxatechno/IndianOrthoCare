@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { Search, Plus, Shield, Clock, AlertTriangle, FileText, Mail, Filter, BarChart3, Download, Pencil, RefreshCw } from 'lucide-react';
 import jsPDF from 'jspdf';
-import { AMCStatus } from '@/data/types';
+import { AMCStatus, type AMCContract } from '@/data/types';
 import { useData } from '@/context/DataContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -56,12 +56,17 @@ function WarrantyCountdown({ warrantyEndDate }: { warrantyEndDate: string | null
 }
 
 export default function AMCContracts() {
-  const { amcContracts: data, equipment, customers, addAMCContract, updateAMCStatus, refreshData } = useData();
+  const { amcContracts: data, equipment, customers, addAMCContract, updateAMCStatus, setAMCQuotation, refreshData } = useData();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [warrantyFilter, setWarrantyFilter] = useState<string>('all');
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ equipmentId: '', startDate: '', endDate: '', price: '' });
+  const [form, setForm] = useState({
+    equipmentId: '', startDate: '', endDate: '', price: '',
+    coverage: 'AMC' as AMCContract['coverage'],
+    visitsPerYear: '4',
+    billing: 'Annual' as AMCContract['billing'],
+  });
   const [autoCreating, setAutoCreating] = useState(false);
   const [renewalDialogOpen, setRenewalDialogOpen] = useState(false);
 
@@ -200,21 +205,23 @@ export default function AMCContracts() {
       toast.error('The contract value cannot be negative.');
       return;
     }
+    // Back-dating is legitimate (contracts are often entered after the fact), so
+    // this warns rather than blocks - it previously passed with no comment at all.
+    if (form.endDate < new Date().toISOString().split('T')[0]) {
+      toast.warning('This contract period has already ended. Saving it as a historical record.');
+    }
     try {
       await addAMCContract({
         equipmentId: form.equipmentId,
         startDate: form.startDate,
         endDate: form.endDate,
         price: Number(form.price) || 0,
+        coverage: form.coverage,
+        visitsPerYear: Number(form.visitsPerYear) || 4,
+        billing: form.billing,
+        warrantyEndDate: equipment.find(e => e.id === form.equipmentId)?.warrantyEndDate ?? null,
       });
-      const eq = equipment.find(e => e.id === form.equipmentId);
-      if (eq?.warrantyEndDate) {
-        const { data: rows } = await sb.from('amc_contracts').select('id').eq('equipment_id', form.equipmentId).order('id', { ascending: false }).limit(1);
-        if (rows && rows.length > 0) {
-          await sb.from('amc_contracts').update({ warranty_end_date: eq.warrantyEndDate }).eq('id', rows[0].id);
-        }
-      }
-      setForm({ equipmentId: '', startDate: '', endDate: '', price: '' });
+      setForm({ equipmentId: '', startDate: '', endDate: '', price: '', coverage: 'AMC', visitsPerYear: '4', billing: 'Annual' });
       setDialogOpen(false);
     } catch (error) {
       console.error('Failed to create AMC contract:', error);
@@ -352,8 +359,7 @@ export default function AMCContracts() {
     if (!amc) return;
 
     const price = Number(quotationPrice);
-    await sb.from('amc_contracts').update({ price }).eq('id', quotationAmcId);
-    await updateAMCStatus(quotationAmcId, 'Quotation Sent');
+    await setAMCQuotation(quotationAmcId, price);
 
     // Generate & download PDF
     const doc = generateQuotationPDF(amc, price);
@@ -455,6 +461,41 @@ export default function AMCContracts() {
               <div>
                 <Label className="text-xs font-semibold text-muted-foreground">Price (₹)</Label>
                 <Input type="number" className="mt-1.5 rounded-xl" placeholder="e.g. 50000" value={form.price} onChange={e => setForm({ ...form, price: e.target.value })} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground">Coverage</Label>
+                  <Select value={form.coverage} onValueChange={v => setForm({ ...form, coverage: v as AMCContract['coverage'] })}>
+                    <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="AMC">AMC — labour only</SelectItem>
+                      <SelectItem value="CMC">CMC — labour + spares</SelectItem>
+                      <SelectItem value="CAMC">CAMC — comprehensive</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label className="text-xs font-semibold text-muted-foreground">PM Visits / Year</Label>
+                  <Select value={form.visitsPerYear} onValueChange={v => setForm({ ...form, visitsPerYear: v })}>
+                    <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {[1, 2, 3, 4, 6, 12].map(n => (
+                        <SelectItem key={n} value={String(n)}>{n} {n === 1 ? 'visit' : 'visits'}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label className="text-xs font-semibold text-muted-foreground">Billing Schedule</Label>
+                <Select value={form.billing} onValueChange={v => setForm({ ...form, billing: v as AMCContract['billing'] })}>
+                  <SelectTrigger className="mt-1.5 rounded-xl"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {['Annual', 'Half-Yearly', 'Quarterly', 'Monthly'].map(b => (
+                      <SelectItem key={b} value={b}>{b}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <Button onClick={handleAdd} className="w-full mt-3 rounded-xl h-11 font-semibold">Create AMC</Button>
             </div>

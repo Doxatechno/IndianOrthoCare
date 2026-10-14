@@ -6,6 +6,14 @@ export interface Customer {
   email: string;
   address: string;
   createdAt: string;
+  /** Last-modified stamp, for display. */
+  updatedAt?: string;
+  /**
+   * Version token, bumped by a trigger on every update. Used to detect a
+   * concurrent edit before overwriting. An integer because it has to survive a
+   * JSON round-trip exactly - updated_at does not, it loses microseconds.
+   */
+  rowVersion?: number;
 }
 
 export interface Equipment {
@@ -18,6 +26,14 @@ export interface Equipment {
   installationDate: string | null;
   warrantyStartDate: string | null;
   warrantyEndDate: string | null;
+  /** Last-modified stamp, for display. */
+  updatedAt?: string;
+  /**
+   * Version token, bumped by a trigger on every update. Used to detect a
+   * concurrent edit before overwriting. An integer because it has to survive a
+   * JSON round-trip exactly - updated_at does not, it loses microseconds.
+   */
+  rowVersion?: number;
 }
 
 export type TicketStatus = 'Pending' | 'Assigned' | 'In Progress' | 'Completed' | 'Issue Reported';
@@ -35,7 +51,18 @@ export interface InstallationTicket {
   issueType: string | null;
   createdDate: string;
   completedDate: string | null;
+  /** Last-modified stamp, for display. */
+  updatedAt?: string;
+  /**
+   * Version token, bumped by a trigger on every update. Used to detect a
+   * concurrent edit before overwriting. An integer because it has to survive a
+   * JSON round-trip exactly - updated_at does not, it loses microseconds.
+   */
+  rowVersion?: number;
 }
+
+export type CoverageType = 'AMC' | 'CMC' | 'CAMC';
+export type BillingFrequency = 'Annual' | 'Half-Yearly' | 'Quarterly' | 'Monthly';
 
 export type AMCStatus = 'Quotation Sent' | 'PO Released' | 'Invoice Generated' | 'Payment Received';
 
@@ -49,6 +76,18 @@ export interface AMCContract {
   endDate: string;
   price: number;
   status: AMCStatus;
+  /** Last-modified stamp, for display. */
+  updatedAt?: string;
+  /**
+   * Version token, bumped by a trigger on every update. Used to detect a
+   * concurrent edit before overwriting. An integer because it has to survive a
+   * JSON round-trip exactly - updated_at does not, it loses microseconds.
+   */
+  rowVersion?: number;
+  coverage: CoverageType;
+  visitsPerYear: number;
+  billing: BillingFrequency;
+  renewalDate: string | null;
 }
 
 export type PMStatus = 'Pending' | 'Assigned' | 'Completed';
@@ -63,6 +102,14 @@ export interface PMSchedule {
   plannedDate: string;
   status: PMStatus;
   assignedTechnician: string | null;
+  /** Last-modified stamp, for display. */
+  updatedAt?: string;
+  /**
+   * Version token, bumped by a trigger on every update. Used to detect a
+   * concurrent edit before overwriting. An integer because it has to survive a
+   * JSON round-trip exactly - updated_at does not, it loses microseconds.
+   */
+  rowVersion?: number;
 }
 
 // Helper: add years to a date string
@@ -80,4 +127,12 @@ export interface Technician {
   reportingManager: string;
   isActive: boolean;
   createdAt: string;
+  /** Last-modified stamp, for display. */
+  updatedAt?: string;
+  /**
+   * Version token, bumped by a trigger on every update. Used to detect a
+   * concurrent edit before overwriting. An integer because it has to survive a
+   * JSON round-trip exactly - updated_at does not, it loses microseconds.
+   */
+  rowVersion?: number;
 }
